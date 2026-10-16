@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio guiado: uvm_config_db en UVM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #18232e;
+    --ink-soft: #4a5866;
+    --paper: #fbfcfb;
+    --panel: #eef3f0;
+    --rule: #d3ddd8;
+    --mask: #1e5b46;      /* verde máscara de soldadura */
+    --pad: #a87b1f;       /* dorado de pad */
+    --code-bg: #10261f;
+    --code-ink: #dbe8e1;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e4ebe7;
+      --ink-soft: #a4b2ab;
+      --paper: #121a17;
+      --panel: #1a2621;
+      --rule: #2d3d36;
+      --mask: #6fbf9c;
+      --pad: #d9b25a;
+      --code-bg: #0b1814;
+      --code-ink: #dbe8e1;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 1.0625rem/1.65 var(--sans);
+  }
+  a { color: var(--mask); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--pad); outline-offset: 3px; border-radius: 2px; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 17rem minmax(0, 1fr);
+    max-width: 78rem;
+    margin: 0 auto;
+  }
+  nav.toc {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    padding: 2.5rem 1.5rem 2rem 1.75rem;
+    border-right: 1px solid var(--rule);
+    font-size: 0.92rem;
+  }
+  nav.toc p { margin: 0 0 0.75rem; font-weight: 600; color: var(--ink-soft); }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: s; }
+  nav.toc li { margin: 0.15rem 0; }
+  nav.toc a {
+    display: block; padding: 0.3rem 0.5rem; border-left: 2px solid transparent;
+    color: var(--ink); text-decoration: none; line-height: 1.35;
+  }
+  nav.toc a:hover { border-left-color: var(--pad); background: var(--panel); }
+
+  main { padding: 2.5rem clamp(1.25rem, 4vw, 3.5rem) 5rem; min-width: 0; }
+  .measure { max-width: 46rem; }
+
+  header.title { margin-bottom: 3rem; padding-bottom: 1.5rem; border-bottom: 3px solid var(--mask); position: relative; }
+  header.title::after {
+    content: ""; position: absolute; left: 0; bottom: -3px; width: 4.5rem; height: 3px; background: var(--pad);
+  }
+  header.title h1 {
+    font-size: clamp(2rem, 4.2vw, 2.9rem); line-height: 1.1; font-weight: 600;
+    letter-spacing: -0.015em; margin: 0 0 0.75rem;
+  }
+  header.title h1 code { font-size: 0.92em; color: var(--mask); background: none; padding: 0; }
+  header.title .byline { color: var(--ink-soft); margin: 0; }
+
+  h2 {
+    font-size: 1.6rem; line-height: 1.25; font-weight: 600; margin: 4rem 0 1rem;
+    padding-top: 1rem; border-top: 1px solid var(--rule);
+  }
+  h3 { font-size: 1.2rem; font-weight: 600; margin: 2.25rem 0 0.6rem; color: var(--mask); }
+  p, ul, ol { margin: 0 0 1rem; }
+  li { margin: 0.25rem 0; }
+  li > ul, li > ol { margin: 0.25rem 0 0; }
+
+  code {
+    font-family: var(--mono); font-size: 0.88em;
+    background: var(--panel); padding: 0.08em 0.32em; border-radius: 3px;
+  }
+  pre {
+    margin: 0 0 1.25rem; padding: 1.1rem 1.25rem; overflow-x: auto;
+    background: var(--code-bg); color: var(--code-ink);
+    border-left: 3px solid var(--pad); border-radius: 0 4px 4px 0;
+    font-size: 0.86rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.5rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+  th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--rule); }
+  thead th { background: var(--panel); font-weight: 600; border-bottom: 2px solid var(--mask); }
+  td.blank { min-width: 7rem; }
+
+  .file { font-weight: 600; margin: 1.5rem 0 0.4rem; }
+  .file code { background: none; padding: 0; font-size: 0.95em; }
+
+  details.solution {
+    margin: 1.5rem 0 2rem; border: 1px solid var(--rule); border-left: 3px solid var(--mask);
+    border-radius: 0 4px 4px 0; background: var(--paper);
+  }
+  details.solution > summary {
+    cursor: pointer; padding: 0.8rem 1.1rem; font-weight: 600; color: var(--mask);
+    list-style: none; display: flex; align-items: center; gap: 0.6rem;
+  }
+  details.solution > summary::-webkit-details-marker { display: none; }
+  details.solution > summary::before {
+    content: "+"; display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem;
+    border: 1.5px solid currentColor; border-radius: 3px; font-family: var(--mono); line-height: 1;
+  }
+  details.solution[open] > summary::before { content: "\2212"; }
+  details.solution > .body { padding: 0 1.1rem 0.5rem; }
+  details.solution > .body > h3:first-child { margin-top: 0.5rem; }
+
+  .print-btn {
+    font: 500 0.9rem var(--sans); color: var(--mask); background: none; cursor: pointer;
+    border: 1px solid var(--rule); border-radius: 3px; padding: 0.35rem 0.7rem; margin-top: 1rem;
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); padding: 1.5rem 1.25rem; }
+  }
+  @media print {
+    nav.toc, .print-btn { display: none; }
+    .layout { display: block; }
+    details.solution > .body { display: block !important; }
+    pre { white-space: pre-wrap; border: 1px solid #999; background: #f4f4f4; color: #000; }
+    h2 { page-break-before: auto; }
+  }
+
+  /* Resaltado de sintaxis (highlight.js) */
+  .hljs-keyword, .hljs-built_in { color: #8fd3b4; }
+  .hljs-type { color: #9cc7e8; }
+  .hljs-string { color: #e6c37a; }
+  .hljs-number, .hljs-literal { color: #f0a58a; }
+  .hljs-comment { color: #7f978c; font-style: italic; }
+  .hljs-meta { color: #c7a8e8; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="Contenido">
+  <p>Contenido</p>
+  <ol>
+    <li><a href="#s1">1. Introducción y objetivos</a></li>
+    <li><a href="#s2">2. Teoría I: qué es uvm_config_db</a></li>
+    <li><a href="#s3">3. Teoría II: precedencia y errores</a></li>
+    <li><a href="#s4">4. Práctica 1: interfaz virtual</a></li>
+    <li><a href="#s5">5. Práctica 2: objeto de configuración</a></li>
+    <li><a href="#s6">6. Práctica 3: comodines y precedencia</a></li>
+    <li><a href="#s7">7. Práctica 4: depuración</a></li>
+    <li><a href="#s8">8. Práctica 5: secuencias y wait_modified</a></li>
+    <li><a href="#s9">9. Evaluación y buenas prácticas</a></li>
+  </ol>
+  <button class="print-btn" type="button" onclick="document.querySelectorAll('details').forEach(d=>d.open=true);window.print()">Imprimir con soluciones</button>
+</nav>
+
+<main>
+<div class="measure">
+
+<header class="title">
+  <h1>Laboratorio guiado: <code>uvm_config_db</code> en UVM</h1>
+  <p class="byline">1 de octubre de 2026</p>
+</header>
+
+<!-- ===================================================== 1 -->
+<section id="s1">
+<h2>1. Introducción y objetivos</h2>
+<p>Al terminar este laboratorio sabrás pasar cualquier dato (interfaces virtuales, objetos de configuración, enteros, strings) entre componentes UVM con <code>uvm_config_db</code>, predecir qué valor gana cuando hay varios <code>set</code>, y depurar un <code>get</code> que falla. El laboratorio dura unas 4 horas: 1 hora de teoría y 5 prácticas incrementales sobre un mismo testbench.</p>
+
+<p><strong>Objetivos de aprendizaje</strong></p>
+<ol>
+  <li>Explicar qué problema resuelve <code>uvm_config_db</code> y su relación con <code>uvm_resource_db</code>.</li>
+  <li>Escribir llamadas <code>set</code> y <code>get</code> correctas, entendiendo cada argumento (contexto, <code>inst_name</code>, <code>field_name</code>, tipo).</li>
+  <li>Construir el <em>scope</em> completo que genera un <code>set</code> y verificar si un <code>get</code> lo alcanza, incluyendo comodines.</li>
+  <li>Aplicar las reglas de precedencia en <code>build_phase</code> y en tiempo de simulación.</li>
+  <li>Diseñar un objeto de configuración por agente y propagarlo desde el test.</li>
+  <li>Depurar con <code>+UVM_CONFIG_DB_TRACE</code>, <code>print_config()</code> y <code>check_config_usage()</code>.</li>
+  <li>Usar <code>config_db</code> desde secuencias y sincronizar cambios dinámicos con <code>wait_modified()</code>.</li>
+</ol>
+
+<p><strong>Requisitos previos</strong></p>
+<ul>
+  <li>SystemVerilog orientado a objetos: clases, parametrización, handles, <code>virtual interface</code>.</li>
+  <li>UVM básico: <code>uvm_component</code>, fases (<code>build</code>, <code>connect</code>, <code>run</code>), factory (<code>type_id::create</code>), agente con driver, monitor y secuenciador.</li>
+  <li>Un simulador con UVM 1.2 o IEEE 1800.2: Questa, VCS, Xcelium, Riviera-PRO o <a href="https://www.edaplayground.com">EDA Playground</a> (gratuito, con Aldec Riviera-PRO).</li>
+</ul>
+
+<p><strong>Convenciones del laboratorio</strong></p>
+<ul>
+  <li>Cada práctica tiene: objetivo, código base, tareas marcadas con <code>// TODO</code>, qué observar en el log, y solución.</li>
+  <li>Los fragmentos de código se acumulan: el testbench de la Práctica 1 se reutiliza en las siguientes.</li>
+  <li>Compila con <code>+UVM_VERBOSITY=UVM_MEDIUM</code> salvo que la práctica indique otra cosa.</li>
+</ul>
+</section>
+
+<!-- ===================================================== 2 -->
+<section id="s2">
+<h2>2. Teoría I: qué es uvm_config_db y cómo funciona</h2>
+<p><code>uvm_config_db</code> es una base de datos global, parametrizada por tipo, donde un componente <em>publica</em> un valor para un rango de la jerarquía y otro componente lo <em>recupera</em> por nombre. Resuelve un problema concreto: el test conoce la configuración, pero quienes la necesitan (driver, monitor, scoreboard) se crean varios niveles más abajo, y pasar argumentos por constructores rompería la factory.</p>
+
+<h3>2.1 Relación con uvm_resource_db</h3>
+<p>Debajo hay un único <em>resource pool</em> (<code>uvm_resource_pool</code>). <code>uvm_resource_db</code> es la interfaz de bajo nivel: guarda recursos con un <em>scope</em> de texto y un nombre. <code>uvm_config_db</code> es una capa encima que añade tres cosas:</p>
+<ul>
+  <li>Construye el scope a partir de un componente de contexto y una ruta relativa.</li>
+  <li>Aplica precedencia jerárquica durante <code>build_phase</code> (lo que se configura más arriba gana).</li>
+  <li>Ofrece <code>wait_modified()</code> para reaccionar a cambios.</li>
+</ul>
+<p>Regla práctica: usa siempre <code>uvm_config_db</code> en testbenches; <code>uvm_resource_db</code> solo para recursos no jerárquicos y compartidos (por ejemplo, un registro de modelo global).</p>
+
+<h3>2.2 Las dos llamadas fundamentales</h3>
+<pre><code class="language-verilog">// Publicar
+uvm_config_db #(T)::set(uvm_component cntxt,
+                        string        inst_name,
+                        string        field_name,
+                        T             value);
+
+// Recuperar (devuelve 1 si encontró un valor)
+bit ok = uvm_config_db #(T)::get(uvm_component cntxt,
+                                 string        inst_name,
+                                 string        field_name,
+                                 inout T       value);</code></pre>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Argumento</th><th>Significado en <code>set</code></th><th>Significado en <code>get</code></th></tr></thead>
+<tbody>
+<tr><td><code>#(T)</code></td><td>Tipo del valor almacenado</td><td>Debe ser <strong>exactamente</strong> el mismo tipo; si no coincide, el <code>get</code> falla en silencio</td></tr>
+<tr><td><code>cntxt</code></td><td>Punto de partida de la ruta; normalmente <code>this</code>, o <code>null</code> desde un módulo</td><td>Normalmente <code>this</code></td></tr>
+<tr><td><code>inst_name</code></td><td>Ruta relativa a <code>cntxt</code> de quién puede leer el valor; admite comodines</td><td>Normalmente <code>""</code> ("yo mismo")</td></tr>
+<tr><td><code>field_name</code></td><td>Nombre de la entrada (clave)</td><td>Mismo nombre, sensible a mayúsculas</td></tr>
+<tr><td><code>value</code></td><td>Valor a guardar (para clases se guarda el <em>handle</em>)</td><td>Variable donde se escribe el resultado</td></tr>
+</tbody></table></div>
+
+<h3>2.3 Cómo se forma el scope</h3>
+<p>El scope efectivo de un <code>set</code> es <code>{cntxt.get_full_name(), ".", inst_name}</code>. Si <code>cntxt</code> es <code>null</code>, se usa <code>uvm_root</code> y el scope es simplemente <code>inst_name</code>. Si <code>inst_name</code> es <code>""</code>, el scope es solo el nombre completo de <code>cntxt</code>.</p>
+<p>Un <code>get</code> construye su propio nombre del mismo modo y busca recursos cuyo scope <em>coincida</em> con él (coincidencia por patrón, no por igualdad).</p>
+<p>Ejemplos, con el test instanciado como <code>uvm_test_top</code>:</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Llamada <code>set</code> (desde)</th><th>Scope resultante</th><th>¿Lo ve <code>uvm_test_top.env.agt.drv</code>?</th></tr></thead>
+<tbody>
+<tr><td><code>set(this, "env.agt.drv", "n", 5)</code> (test)</td><td><code>uvm_test_top.env.agt.drv</code></td><td>Sí</td></tr>
+<tr><td><code>set(this, "env.agt.*", "n", 5)</code> (test)</td><td><code>uvm_test_top.env.agt.*</code></td><td>Sí, y también al monitor y al secuenciador</td></tr>
+<tr><td><code>set(this, "agt", "n", 5)</code> (env)</td><td><code>uvm_test_top.env.agt</code></td><td>No: el driver es <code>...agt.drv</code>, no <code>...agt</code></td></tr>
+<tr><td><code>set(null, "uvm_test_top.*", "vif", vif)</code> (módulo top)</td><td><code>uvm_test_top.*</code></td><td>Sí</td></tr>
+<tr><td><code>set(null, "*", "vif", vif)</code> (módulo top)</td><td><code>*</code></td><td>Sí (y todos los demás)</td></tr>
+<tr><td><code>set(this, "", "n", 5)</code> (agente)</td><td><code>uvm_test_top.env.agt</code></td><td>No</td></tr>
+</tbody></table></div>
+
+<h3>2.4 Comodines y expresiones regulares</h3>
+<ul>
+  <li><code>*</code> coincide con cualquier secuencia de caracteres, incluidos puntos: <code>env.*</code> alcanza a todos los descendientes de <code>env</code>, a cualquier profundidad, pero <strong>no</strong> a <code>env</code> mismo.</li>
+  <li><code>?</code> coincide con un único carácter: <code>env.agt?</code> alcanza a <code>agt0</code> y <code>agt1</code>.</li>
+  <li>Un <code>inst_name</code> entre barras se interpreta como expresión regular POSIX: <code>"/^uvm_test_top\.env\.agt[0-3]\..*$/"</code>.</li>
+  <li><code>*agt*</code> es un patrón frecuente pero peligroso: también alcanza a <code>my_agt_cov</code> o a <code>cfg_agt_monitor</code>.</li>
+</ul>
+
+<h3>2.5 Qué tipos se pueden guardar</h3>
+<p>Cualquier tipo de SystemVerilog: enteros, enums, strings, interfaces virtuales, handles de clase, arrays, structs. Atajos predefinidos:</p>
+<pre><code class="language-verilog">typedef uvm_config_db #(uvm_bitstream_t) uvm_config_int;
+typedef uvm_config_db #(string)          uvm_config_string;
+typedef uvm_config_db #(uvm_object)      uvm_config_object;</code></pre>
+<p>Cuidado: <code>uvm_config_int</code> usa <code>uvm_bitstream_t</code> (un vector de 4096 bits), no <code>int</code>. Un <code>uvm_config_int::set</code> no lo recupera un <code>uvm_config_db#(int)::get</code>.</p>
+
+<h3>2.6 Cuándo llamar a set y get</h3>
+<ul>
+  <li><strong>set</strong>: en <code>build_phase</code> del padre, <em>antes</em> de crear (o al menos antes de que el hijo ejecute su <code>build_phase</code>). Desde el módulo top, en un <code>initial</code> antes de <code>run_test()</code>.</li>
+  <li><strong>get</strong>: en <code>build_phase</code> del componente que consume el valor (UVM ejecuta <code>build_phase</code> de arriba hacia abajo, así que el padre ya habrá hecho su <code>set</code>).</li>
+  <li>Para interfaces virtuales es habitual hacer el <code>get</code> en <code>build_phase</code> o <code>connect_phase</code>; nunca esperes a <code>run_phase</code> para descubrir que falta.</li>
+</ul>
+</section>
+
+<!-- ===================================================== 3 -->
+<section id="s3">
+<h2>3. Teoría II: precedencia, configuración automática y errores comunes</h2>
+<p>Cuando varios <code>set</code> alcanzan al mismo <code>get</code>, gana el de mayor precedencia; durante <code>build_phase</code> la precedencia depende de la profundidad del contexto, y fuera de ella gana el último <code>set</code>. Esta sección explica la regla exacta y las trampas que causan la mayoría de fallos.</p>
+
+<h3>3.1 La regla de precedencia</h3>
+<p>Cada <code>set</code> crea un recurso con un valor numérico de precedencia:</p>
+<ul>
+  <li><strong>Durante <code>build_phase</code></strong>: precedencia = <code>default_precedence (1000) − profundidad(cntxt)</code>. El test (<code>uvm_test_top</code>, profundidad 1) obtiene 999; el env (profundidad 2) obtiene 998; el agente, 997. Por eso <strong>el componente más alto en la jerarquía gana</strong>, aunque el hijo haga su <code>set</code> después.</li>
+  <li><strong>Fuera de <code>build_phase</code></strong> (antes de <code>run_test()</code> o en <code>run_phase</code>): precedencia = 1000 para todos.</li>
+  <li><strong>Empate de precedencia</strong>: gana el <code>set</code> más reciente.</li>
+</ul>
+<p>Si varios recursos coinciden con el nombre del <code>get</code>, UVM elige el de mayor precedencia y, entre iguales, el último insertado. <strong>La especificidad del patrón no importa</strong>: <code>env.*</code> y <code>env.agt.drv</code> compiten solo por precedencia.</p>
+<pre><code class="language-verilog">// En my_test::build_phase  -> precedencia 999
+uvm_config_db #(int)::set(this, "env.agt.drv", "delay", 10);
+// En my_env::build_phase   -> precedencia 998
+uvm_config_db #(int)::set(this, "agt.drv",     "delay", 2);
+// El driver obtiene delay = 10: el test está más arriba.</code></pre>
+<p><strong>Trampa importante</strong>: un <code>set</code> hecho desde el módulo top antes de <code>run_test()</code> no está en <code>build_phase</code>, así que obtiene precedencia 1000 y gana incluso al test. Si quieres que el test pueda sobrescribir algo publicado por el top, el test debe publicarlo con otro nombre o leerlo y republicarlo.</p>
+
+<h3>3.2 Valores frente a handles</h3>
+<p>Para tipos simples, <code>set</code> guarda una copia. Para clases, guarda el <em>handle</em>: si el test modifica el objeto después del <code>set</code>, quien hizo <code>get</code> ve el cambio, porque comparten el mismo objeto. Es útil (configuración compartida) y peligroso (un componente puede cambiar la configuración de otro). Si cada agente necesita su propia configuración, crea un objeto por agente.</p>
+
+<h3>3.3 Configuración automática con macros de campo</h3>
+<p>Si un componente registra campos con <code>`uvm_field_*</code> y llama a <code>super.build_phase(phase)</code>, UVM invoca <code>apply_config_settings()</code>, que busca en la base de datos entradas con el mismo nombre que el campo y las asigna sin <code>get</code> explícito.</p>
+<pre><code class="language-verilog">class my_driver extends uvm_driver #(my_item);
+  int unsigned delay;
+  `uvm_component_utils_begin(my_driver)
+    `uvm_field_int(delay, UVM_DEFAULT)
+  `uvm_component_utils_end
+
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase); // aquí se aplica la configuración automática
+  endfunction
+endclass</code></pre>
+<p>Limitaciones: solo reconoce tipos integrales (<code>uvm_config_int</code>, <code>int</code>, <code>int unsigned</code>), <code>string</code> y objetos publicados como <code>uvm_object</code> (<code>uvm_config_object</code>). No funciona con enums publicados con su propio tipo, interfaces virtuales ni clases publicadas con su tipo derivado. Además, recorre todos los recursos que coinciden con el componente y tiene un coste de rendimiento.</p>
+<p>Recomendación del laboratorio: usa <code>get</code> explícito y comprueba su resultado. En IEEE 1800.2 puedes desactivar la configuración automática sobrescribiendo <code>use_automatic_config()</code> para que devuelva 0.</p>
+
+<h3>3.4 Errores comunes</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Síntoma</th><th>Causa probable</th><th>Cómo confirmarlo</th></tr></thead>
+<tbody>
+<tr><td><code>get</code> devuelve 0 y la vif queda <code>null</code></td><td>Tipo distinto en <code>set</code> y <code>get</code> (p. ej. <code>virtual my_if</code> frente a <code>virtual my_if #(8)</code>, o <code>int</code> frente a <code>uvm_bitstream_t</code>)</td><td><code>+UVM_CONFIG_DB_TRACE</code>: aparece el <code>set</code> pero el <code>get</code> no lo encuentra</td></tr>
+<tr><td><code>get</code> devuelve 0</td><td><code>inst_name</code> no alcanza al componente (<code>"agt"</code> en vez de <code>"agt.*"</code>)</td><td>Compara el scope del trace con <code>get_full_name()</code> del componente</td></tr>
+<tr><td><code>get</code> devuelve 0</td><td>Errata en <code>field_name</code> o mayúsculas distintas</td><td><code>check_config_usage()</code> lista el <code>set</code> como no usado</td></tr>
+<tr><td><code>get</code> devuelve 0</td><td>El <code>set</code> se ejecuta después del <code>get</code> (p. ej. en <code>connect_phase</code> del padre)</td><td>Orden de las líneas en el trace</td></tr>
+<tr><td>Valor inesperado</td><td>Otro <code>set</code> con mayor precedencia (más arriba o desde el top)</td><td><code>print_config(1)</code> muestra todos los candidatos</td></tr>
+<tr><td>Dos agentes comparten configuración</td><td>Mismo handle publicado con un comodín amplio</td><td>Imprime el objeto en cada agente y compara el id de instancia</td></tr>
+<tr><td>Nadie avisa del error</td><td>No se comprobó el valor de retorno del <code>get</code></td><td>Revisión de código: siempre <code>if (!get(...)) `uvm_fatal(...)</code></td></tr>
+</tbody></table></div>
+
+<h3>3.5 Patrón recomendado de get</h3>
+<pre><code class="language-verilog">if (!uvm_config_db #(virtual simple_if)::get(this, "", "vif", vif))
+  `uvm_fatal("NOVIF", {"No se encontró 'vif' para ", get_full_name()})</code></pre>
+<p>Para parámetros opcionales, asigna un valor por defecto antes del <code>get</code> y no lances error si falta.</p>
+</section>
+
+<!-- ===================================================== 4 -->
+<section id="s4">
+<h2>4. Práctica 1: la interfaz virtual del top al driver y al monitor</h2>
+<p>Objetivo: publicar la interfaz física desde el módulo top y recuperarla en el driver y el monitor, que son clases y no pueden ver señales directamente. Es el uso más frecuente de <code>config_db</code> y la base del resto del laboratorio.</p>
+
+<h3>4.1 Código base</h3>
+<p>Crea los archivos siguientes. Las líneas <code>// TODO</code> son las que debes completar.</p>
+
+<p class="file"><code>simple_if.sv</code></p>
+<pre><code class="language-verilog">interface simple_if (input logic clk);
+  logic       valid;
+  logic [7:0] data;
+endinterface</code></pre>
+
+<p class="file"><code>lab_pkg.sv</code> (item, driver, monitor, agente, env y test)</p>
+<pre><code class="language-verilog">package lab_pkg;
+  import uvm_pkg::*;
+  `include "uvm_macros.svh"
+
+  class simple_item extends uvm_sequence_item;
+    rand bit [7:0] data;
+    `uvm_object_utils_begin(simple_item)
+      `uvm_field_int(data, UVM_DEFAULT)
+    `uvm_object_utils_end
+    function new(string name = "simple_item"); super.new(name); endfunction
+  endclass
+
+  class simple_driver extends uvm_driver #(simple_item);
+    `uvm_component_utils(simple_driver)
+    virtual simple_if vif;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      // TODO 1: recupera "vif" con uvm_config_db y lanza `uvm_fatal si falla
+    endfunction
+
+    task run_phase(uvm_phase phase);
+      vif.valid &lt;= 0;
+      forever begin
+        seq_item_port.get_next_item(req);
+        @(posedge vif.clk);
+        vif.valid &lt;= 1; vif.data &lt;= req.data;
+        @(posedge vif.clk);
+        vif.valid &lt;= 0;
+        seq_item_port.item_done();
+      end
+    endtask
+  endclass
+
+  class simple_monitor extends uvm_monitor;
+    `uvm_component_utils(simple_monitor)
+    virtual simple_if vif;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      // TODO 2: recupera "vif" igual que en el driver
+    endfunction
+
+    task run_phase(uvm_phase phase);
+      forever begin
+        @(posedge vif.clk);
+        if (vif.valid) `uvm_info("MON", $sformatf("data = 0x%02h", vif.data), UVM_MEDIUM)
+      end
+    endtask
+  endclass
+
+  typedef uvm_sequencer #(simple_item) simple_sequencer;
+
+  class simple_agent extends uvm_agent;
+    `uvm_component_utils(simple_agent)
+    simple_driver    drv;
+    simple_monitor   mon;
+    simple_sequencer sqr;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      mon = simple_monitor::type_id::create("mon", this);
+      drv = simple_driver::type_id::create("drv", this);
+      sqr = simple_sequencer::type_id::create("sqr", this);
+    endfunction
+
+    function void connect_phase(uvm_phase phase);
+      drv.seq_item_port.connect(sqr.seq_item_export);
+    endfunction
+  endclass
+
+  class simple_env extends uvm_env;
+    `uvm_component_utils(simple_env)
+    simple_agent agt;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      agt = simple_agent::type_id::create("agt", this);
+    endfunction
+  endclass
+
+  class simple_seq extends uvm_sequence #(simple_item);
+    `uvm_object_utils(simple_seq)
+    int unsigned n_items = 5;
+    function new(string name = "simple_seq"); super.new(name); endfunction
+    task body();
+      repeat (n_items) begin
+        req = simple_item::type_id::create("req");
+        start_item(req);
+        if (!req.randomize()) `uvm_error("RAND", "randomize falló")
+        finish_item(req);
+      end
+    endtask
+  endclass
+
+  class base_test extends uvm_test;
+    `uvm_component_utils(base_test)
+    simple_env env;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      env = simple_env::type_id::create("env", this);
+    endfunction
+    function void end_of_elaboration_phase(uvm_phase phase);
+      uvm_top.print_topology();
+    endfunction
+    task run_phase(uvm_phase phase);
+      simple_seq seq = simple_seq::type_id::create("seq");
+      phase.raise_objection(this);
+      seq.start(env.agt.sqr);
+      phase.drop_objection(this);
+    endtask
+  endclass
+endpackage</code></pre>
+
+<p class="file"><code>tb_top.sv</code></p>
+<pre><code class="language-verilog">module tb_top;
+  import uvm_pkg::*;
+  import lab_pkg::*;
+
+  logic clk = 0;
+  always #5 clk = ~clk;
+
+  simple_if sif (clk);
+
+  initial begin
+    // TODO 3: publica 'sif' con el nombre "vif" para todo lo que cuelgue del test
+    run_test("base_test");
+  end
+endmodule</code></pre>
+<p>Comando de ejemplo (Questa): <code>vlog -sv +incdir+$UVM_HOME/src simple_if.sv lab_pkg.sv tb_top.sv</code> y luego <code>vsim -c tb_top +UVM_TESTNAME=base_test -do "run -all"</code>.</p>
+
+<h3>4.2 Tareas</h3>
+<ol>
+  <li>Completa los TODO 1, 2 y 3. Simula y comprueba que el monitor imprime 5 valores.</li>
+  <li>Fíjate en la topología impresa: anota el nombre completo del driver y del monitor.</li>
+  <li><strong>Experimento A</strong>: cambia el <code>inst_name</code> del top a <code>"uvm_test_top.env.agt"</code>. ¿Qué ocurre y por qué?</li>
+  <li><strong>Experimento B</strong>: restaura el TODO 3 y cambia en el driver el tipo a <code>uvm_config_db #(virtual interface simple_if)</code>. ¿Sigue funcionando? Ahora prueba con <code>uvm_config_db #(int)</code>: ¿qué error obtienes, de compilación o de simulación?</li>
+  <li><strong>Experimento C</strong>: comenta el <code>uvm_fatal</code> del driver y elimina el <code>set</code> del top. ¿Dónde y cómo falla la simulación?</li>
+</ol>
+
+<h3>4.3 Qué observar</h3>
+<ul>
+  <li>Sin errores, el log muestra cinco líneas <code>[MON] data = 0x..</code> cada 20 ns.</li>
+  <li>En el Experimento A, el <code>get</code> falla para <code>uvm_test_top.env.agt.drv</code> y <code>...agt.mon</code>: el scope <code>uvm_test_top.env.agt</code> no contiene comodín y no coincide con los hijos.</li>
+  <li>En el Experimento C, la simulación muere en <code>run_phase</code> con un acceso a una interfaz virtual <code>null</code>: un error mucho más difícil de diagnosticar que el <code>uvm_fatal</code>.</li>
+</ul>
+
+<details class="solution">
+<summary>4.4 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 1 y TODO 2 (driver y monitor)
+if (!uvm_config_db #(virtual simple_if)::get(this, "", "vif", vif))
+  `uvm_fatal("NOVIF", {"Falta 'vif' para ", get_full_name()})
+
+// TODO 3 (tb_top)
+uvm_config_db #(virtual simple_if)::set(null, "uvm_test_top.*", "vif", sif);</code></pre>
+<p>Respuestas: en el Experimento B, <code>virtual interface simple_if</code> es el mismo tipo que <code>virtual simple_if</code> (la palabra <code>interface</code> es opcional), así que funciona; con <code>int</code> falla en compilación porque no puedes pasar una variable de tipo interfaz virtual al argumento <code>inout int</code>. Si en cambio el <code>set</code> y el <code>get</code> usan tipos distintos pero compatibles con sus variables, el fallo es en simulación y silencioso: por eso es obligatorio comprobar el retorno.</p>
+<p>Alternativa más precisa que <code>uvm_test_top.*</code>: <code>set(null, "uvm_test_top.env.agt.*", "vif", sif)</code>. Con varios agentes y varias interfaces, publica cada una con un scope distinto (Práctica 3).</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 5 -->
+<section id="s5">
+<h2>5. Práctica 2: objeto de configuración del agente</h2>
+<p>Objetivo: agrupar toda la configuración de un agente en una sola clase, crearla en el test y publicarla con una única llamada <code>set</code>. Así el agente es reutilizable: el mismo código funciona activo o pasivo, con cualquier interfaz y cualquier temporización.</p>
+
+<h3>5.1 Diseño</h3>
+<p>El flujo de datos queda así:</p>
+<ol>
+  <li><code>tb_top</code> publica la interfaz <strong>solo para el test</strong>: <code>set(null, "uvm_test_top", "vif", sif)</code>.</li>
+  <li>El test lee la interfaz, crea <code>simple_agent_cfg</code>, rellena sus campos y la publica para el agente.</li>
+  <li>El agente lee el objeto, decide si crea driver y secuenciador, y lo reenvía a sus hijos.</li>
+  <li>Driver y monitor leen el objeto y toman de él la interfaz y los parámetros.</li>
+</ol>
+<p>Ventaja: si mañana el agente necesita un parámetro nuevo, añades un campo a la clase y no tocas ninguna llamada <code>set</code>/<code>get</code>.</p>
+
+<h3>5.2 Código nuevo</h3>
+<p>Añade al paquete, antes del driver:</p>
+<pre><code class="language-verilog">class simple_agent_cfg extends uvm_object;
+  `uvm_object_utils(simple_agent_cfg)
+  uvm_active_passive_enum is_active   = UVM_ACTIVE;
+  virtual simple_if       vif;
+  int unsigned            idle_cycles = 0;   // ciclos entre transacciones
+  bit                     has_checks  = 1;
+  function new(string name = "simple_agent_cfg"); super.new(name); endfunction
+endclass</code></pre>
+
+<p>Modifica el agente:</p>
+<pre><code class="language-verilog">class simple_agent extends uvm_agent;
+  `uvm_component_utils(simple_agent)
+  simple_agent_cfg cfg;
+  simple_driver    drv;
+  simple_monitor   mon;
+  simple_sequencer sqr;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    // TODO 4: recupera "cfg" (tipo simple_agent_cfg); `uvm_fatal si falta
+    // TODO 5: reenvía cfg a todos los hijos del agente con un set
+    mon = simple_monitor::type_id::create("mon", this);
+    if (cfg.is_active == UVM_ACTIVE) begin
+      drv = simple_driver::type_id::create("drv", this);
+      sqr = simple_sequencer::type_id::create("sqr", this);
+    end
+  endfunction
+
+  function void connect_phase(uvm_phase phase);
+    if (cfg.is_active == UVM_ACTIVE)
+      drv.seq_item_port.connect(sqr.seq_item_export);
+  endfunction
+endclass</code></pre>
+
+<p>En el driver (y de forma análoga en el monitor), sustituye el <code>get</code> de la vif por:</p>
+<pre><code class="language-verilog">simple_agent_cfg cfg;
+
+function void build_phase(uvm_phase phase);
+  super.build_phase(phase);
+  // TODO 6: recupera "cfg" y asigna vif = cfg.vif
+endfunction
+
+// En run_phase, tras item_done():
+repeat (cfg.idle_cycles) @(posedge vif.clk);</code></pre>
+
+<p>Modifica el test base y añade un test pasivo:</p>
+<pre><code class="language-verilog">class base_test extends uvm_test;
+  `uvm_component_utils(base_test)
+  simple_env       env;
+  simple_agent_cfg cfg;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  virtual function void configure(); // los tests hijos la sobrescriben
+    cfg.idle_cycles = 2;
+  endfunction
+
+  function void build_phase(uvm_phase phase);
+    cfg = simple_agent_cfg::type_id::create("cfg");
+    // TODO 7: recupera "vif" publicada por tb_top y guárdala en cfg.vif
+    configure();
+    // TODO 8: publica cfg para el agente "env.agt"
+    env = simple_env::type_id::create("env", this);
+  endfunction
+  // end_of_elaboration_phase y run_phase como en la Práctica 1,
+  // pero lanzando la secuencia solo si cfg.is_active == UVM_ACTIVE
+endclass
+
+class passive_test extends base_test;
+  `uvm_component_utils(passive_test)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void configure();
+    cfg.is_active = UVM_PASSIVE;
+  endfunction
+endclass</code></pre>
+<p>Y en <code>tb_top</code>, cambia el <code>set</code> por: <code>uvm_config_db #(virtual simple_if)::set(null, "uvm_test_top", "vif", sif);</code></p>
+
+<h3>5.3 Tareas</h3>
+<ol>
+  <li>Completa los TODO 4 a 8. Ejecuta <code>+UVM_TESTNAME=base_test</code> y mide en el log la separación entre transacciones (debe ser de 4 ciclos: 2 de la transacción más 2 de reposo).</li>
+  <li>Ejecuta <code>+UVM_TESTNAME=passive_test</code> y compara la topología: no deben existir <code>drv</code> ni <code>sqr</code>.</li>
+  <li><strong>Experimento D (handles compartidos)</strong>: en <code>base_test::run_phase</code>, tras 60 ns, ejecuta <code>cfg.idle_cycles = 0;</code>. ¿Cambia la separación entre transacciones? Explica por qué sin ningún <code>set</code> adicional.</li>
+  <li><strong>Experimento E</strong>: en el TODO 8 usa <code>"env.*"</code> en lugar de <code>"env.agt"</code>. ¿Funciona? ¿Qué riesgo tiene si el env tuviera dos agentes?</li>
+  <li>Pregunta: ¿por qué el test publica la vif dentro de <code>cfg</code> en lugar de dejar que el driver la lea directamente del top?</li>
+</ol>
+
+<details class="solution">
+<summary>5.4 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 4 (agente)
+if (!uvm_config_db #(simple_agent_cfg)::get(this, "", "cfg", cfg))
+  `uvm_fatal("NOCFG", {"Falta 'cfg' para ", get_full_name()})
+// TODO 5 (agente)
+uvm_config_db #(simple_agent_cfg)::set(this, "*", "cfg", cfg);
+
+// TODO 6 (driver y monitor)
+if (!uvm_config_db #(simple_agent_cfg)::get(this, "", "cfg", cfg))
+  `uvm_fatal("NOCFG", {"Falta 'cfg' para ", get_full_name()})
+vif = cfg.vif;
+
+// TODO 7 (test)
+if (!uvm_config_db #(virtual simple_if)::get(this, "", "vif", cfg.vif))
+  `uvm_fatal("NOVIF", "El test no recibió 'vif' de tb_top")
+// TODO 8 (test)
+uvm_config_db #(simple_agent_cfg)::set(this, "env.agt", "cfg", cfg);</code></pre>
+<p>Respuestas:</p>
+<ul>
+  <li><strong>D</strong>: sí cambia. El <code>set</code> guardó el <em>handle</em>, así que driver, agente y test apuntan al mismo objeto; modificarlo es visible para todos de inmediato.</li>
+  <li><strong>E</strong>: funciona, porque <code>env.*</code> alcanza a <code>env.agt</code>. Con dos agentes, ambos recibirían el mismo objeto (misma interfaz, mismo modo), que casi nunca es lo deseado.</li>
+  <li><strong>Pregunta 5</strong>: el test es quien sabe qué interfaz corresponde a cada agente. Centralizar la decisión en el test evita que el agente dependa de un nombre fijo publicado por el top y permite reutilizarlo con varias instancias.</li>
+</ul>
+<p>Nota: <code>uvm_agent</code> ya tiene un campo <code>is_active</code> que intenta leer con <code>config_db</code> usando el nombre <code>"is_active"</code>. En este laboratorio usamos <code>cfg.is_active</code> para que toda la configuración viva en un solo sitio; si prefieres el mecanismo nativo, consulta <code>get_is_active()</code>.</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 6 -->
+<section id="s6">
+<h2>6. Práctica 3: comodines, jerarquía y precedencia</h2>
+<p>Objetivo: escalar a dos agentes con interfaces distintas usando scopes precisos, y comprobar experimentalmente las reglas de precedencia de la Sección 3. Antes de simular cada experimento, escribe tu predicción.</p>
+
+<h3>6.1 Dos agentes, dos interfaces</h3>
+<p>En <code>tb_top</code>, instancia dos interfaces y publícalas con nombres distintos:</p>
+<pre><code class="language-verilog">simple_if sif0 (clk);
+simple_if sif1 (clk);
+
+initial begin
+  uvm_config_db #(virtual simple_if)::set(null, "uvm_test_top", "vif0", sif0);
+  uvm_config_db #(virtual simple_if)::set(null, "uvm_test_top", "vif1", sif1);
+  run_test();
+end</code></pre>
+
+<p>Modifica el env para crear <code>agt0</code> y <code>agt1</code>, y añade un parámetro opcional de prueba:</p>
+<pre><code class="language-verilog">class simple_env extends uvm_env;
+  `uvm_component_utils(simple_env)
+  simple_agent agt[2];
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void build_phase(uvm_phase phase);
+    int env_lvl;
+    // Permite que el env publique 'lvl' desde la línea de comandos: +ENV_LVL=2
+    if ($value$plusargs("ENV_LVL=%d", env_lvl))
+      uvm_config_db #(int)::set(this, "agt0.mon", "lvl", env_lvl);
+    foreach (agt[i])
+      agt[i] = simple_agent::type_id::create($sformatf("agt%0d", i), this);
+  endfunction
+endclass</code></pre>
+
+<p>En el monitor, añade un parámetro opcional <code>lvl</code> que se lee en <code>build_phase</code> y se imprime:</p>
+<pre><code class="language-verilog">int lvl = 0; // valor por defecto si nadie lo publica
+
+// en build_phase, después de obtener cfg:
+void'(uvm_config_db #(int)::get(this, "", "lvl", lvl));
+`uvm_info("LVL", $sformatf("lvl = %0d", lvl), UVM_LOW)</code></pre>
+
+<p>En el test, crea dos objetos de configuración:</p>
+<pre><code class="language-verilog">simple_agent_cfg cfg[2];
+
+function void build_phase(uvm_phase phase);
+  foreach (cfg[i]) begin
+    cfg[i] = simple_agent_cfg::type_id::create($sformatf("cfg%0d", i));
+    // TODO 9: lee "vif0"/"vif1" en cfg[i].vif
+    // TODO 10: publica cfg[i] solo para "env.agt0" / "env.agt1"
+  end
+  cfg[1].is_active = UVM_PASSIVE; // agt1 solo observa
+  env = simple_env::type_id::create("env", this);
+endfunction</code></pre>
+<p>Tarea: completa TODO 9 y 10 y verifica en la topología que <code>agt0</code> tiene driver y <code>agt1</code> no. Lanza la secuencia en <code>env.agt[0].sqr</code>.</p>
+
+<h3>6.2 Experimentos de precedencia</h3>
+<p>Para cada fila, añade en <code>build_phase</code> del test (o donde se indique) solo los <code>set</code> de esa fila, simula y anota el <code>lvl</code> que imprime <code>uvm_test_top.env.agt0.mon</code>. Escribe primero tu predicción.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Configuración</th><th>Tu predicción</th><th>Resultado</th></tr></thead>
+<tbody>
+<tr><td>P1</td><td>Test: <code>set(this, "env.agt0.mon", "lvl", 1)</code>; simular con <code>+ENV_LVL=2</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>P2</td><td>Test: <code>set(this, "env.*", "lvl", 3)</code> y después <code>set(this, "env.agt0.*", "lvl", 4)</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>P3</td><td>Test: <code>set(this, "env.agt0.*", "lvl", 4)</code> y después <code>set(this, "env.*", "lvl", 3)</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>P4</td><td>Top (antes de <code>run_test</code>): <code>set(null, "*", "lvl", 9)</code>; test: <code>set(this, "env.*", "lvl", 5)</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>P5</td><td>Test: <code>set(this, "env.agt0.mon", "lvl", 1)</code>; agente (en su <code>build_phase</code>): <code>set(this, "mon", "lvl", 7)</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>P6</td><td>Test: <code>set(this, "env.agt?.mon", "lvl", 6)</code>. ¿Qué imprime también <code>agt1.mon</code>?</td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>P7</td><td>Test: <code>set(this, "env.agt", "lvl", 8)</code></td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+<p><strong>Experimento P8 (tiempo de simulación)</strong>: en el monitor, al inicio de <code>run_phase</code>, espera 100 ns y vuelve a hacer el <code>get</code> de <code>lvl</code>. En el test, en <code>run_phase</code> a los 50 ns, ejecuta <code>uvm_config_db #(int)::set(this, "env.agt0.mon", "lvl", 10)</code>, manteniendo el <code>set</code> de P1 en <code>build_phase</code>. ¿Qué valor lee el monitor a los 100 ns?</p>
+
+<details class="solution">
+<summary>6.3 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 9
+if (!uvm_config_db #(virtual simple_if)::get(this, "", $sformatf("vif%0d", i), cfg[i].vif))
+  `uvm_fatal("NOVIF", $sformatf("Falta vif%0d", i))
+// TODO 10
+uvm_config_db #(simple_agent_cfg)::set(this, $sformatf("env.agt%0d", i), "cfg", cfg[i]);</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Resultado</th><th>Por qué</th></tr></thead>
+<tbody>
+<tr><td>P1</td><td>1</td><td>En <code>build_phase</code>, el test (profundidad 1, precedencia 999) gana al env (profundidad 2, precedencia 998) aunque el env haga su <code>set</code> más tarde</td></tr>
+<tr><td>P2</td><td>4</td><td>Mismo contexto, misma precedencia: gana el último <code>set</code></td></tr>
+<tr><td>P3</td><td>3</td><td>La especificidad del patrón no cuenta; gana el último <code>set</code></td></tr>
+<tr><td>P4</td><td>9</td><td>El <code>set</code> del top ocurre fuera de <code>build_phase</code> (precedencia 1000) y gana al test (999)</td></tr>
+<tr><td>P5</td><td>1</td><td>El agente está más abajo (precedencia 997) que el test (999)</td></tr>
+<tr><td>P6</td><td>6 en ambos</td><td><code>?</code> coincide con un carácter: <code>agt0</code> y <code>agt1</code></td></tr>
+<tr><td>P7</td><td>0 (valor por defecto)</td><td><code>env.agt</code> no alcanza a <code>env.agt0.mon</code>: no hay comodín y el nombre no coincide</td></tr>
+<tr><td>P8</td><td>10</td><td>Un <code>set</code> en <code>run_phase</code> tiene precedencia 1000 y supera al 999 del <code>build_phase</code></td></tr>
+</tbody></table></div>
+<p>Conclusión: piensa en la precedencia como "quién está más arriba, mientras dura <code>build_phase</code>" y "el último que escribe, fuera de ella". Diseña tus scopes para que no compitan: un <code>set</code> por dato y por destino, con el patrón más estrecho posible.</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 7 -->
+<section id="s7">
+<h2>7. Práctica 4: depuración de config_db</h2>
+<p>Objetivo: localizar en minutos un <code>get</code> que falla o un valor inesperado, usando las herramientas que trae UVM en lugar de añadir <code>$display</code> al azar. La práctica introduce cuatro errores controlados por macros y te pide encontrarlos con cada herramienta.</p>
+
+<h3>7.1 Herramientas disponibles</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Herramienta</th><th>Cómo se activa</th><th>Qué muestra</th></tr></thead>
+<tbody>
+<tr><td>Traza de config_db</td><td><code>+UVM_CONFIG_DB_TRACE</code> en la línea de comandos, o <code>uvm_config_db_options::turn_on_tracing()</code> en código</td><td>Cada <code>set</code> y cada <code>get</code> con su scope, tipo, quién lo hizo y el valor (mensajes con ID <code>CFGDB/SET</code> y <code>CFGDB/GET</code>; el formato exacto varía con la versión)</td></tr>
+<tr><td>Traza de recursos</td><td><code>+UVM_RESOURCE_DB_TRACE</code></td><td>Lo mismo a nivel de <code>uvm_resource_db</code></td></tr>
+<tr><td><code>print_config(recurse, audit)</code></td><td>Método de <code>uvm_component</code>, p. ej. en <code>end_of_elaboration_phase</code></td><td>Todos los recursos visibles para el componente; con <code>audit = 1</code>, quién los leyó</td></tr>
+<tr><td><code>check_config_usage(recurse)</code></td><td>Método de <code>uvm_component</code>; llámalo en <code>report_phase</code> del test</td><td>Recursos publicados que <strong>nadie leyó</strong>: delata erratas y scopes erróneos</td></tr>
+<tr><td><code>uvm_config_db #(T)::dump()</code></td><td>Llamada estática</td><td>Volcado completo del resource pool</td></tr>
+<tr><td><code>print_topology()</code></td><td><code>uvm_top.print_topology()</code></td><td>Nombres completos reales, para comparar con los scopes</td></tr>
+</tbody></table></div>
+
+<p>Añade al test base estas dos fases de diagnóstico; las usarás en toda la práctica:</p>
+<pre><code class="language-verilog">function void end_of_elaboration_phase(uvm_phase phase);
+  uvm_top.print_topology();
+  env.agt[0].print_config(.recurse(1), .audit(1));
+endfunction
+
+function void report_phase(uvm_phase phase);
+  check_config_usage();
+endfunction</code></pre>
+
+<h3>7.2 Los cuatro errores</h3>
+<p>Inserta este bloque en <code>base_test::build_phase</code>, sustituyendo el <code>set</code> de <code>cfg[0]</code> (deja el de <code>cfg[1]</code> como estaba):</p>
+<pre><code class="language-verilog">`ifdef BUG1
+  uvm_config_db #(simple_agent_cfg)::set(this, "env.agt0", "Cfg", cfg[0]);
+`elsif BUG2
+  uvm_config_object::set(this, "env.agt0", "cfg", cfg[0]);
+`elsif BUG3
+  uvm_config_db #(simple_agent_cfg)::set(this, "env.agt_0", "cfg", cfg[0]);
+`elsif BUG4
+  // nada aquí: el set se mueve a connect_phase (ver abajo)
+`else
+  uvm_config_db #(simple_agent_cfg)::set(this, "env.agt0", "cfg", cfg[0]);
+`endif</code></pre>
+<p>Y en el test:</p>
+<pre><code class="language-verilog">`ifdef BUG4
+function void connect_phase(uvm_phase phase);
+  uvm_config_db #(simple_agent_cfg)::set(this, "env.agt0", "cfg", cfg[0]);
+endfunction
+`endif</code></pre>
+
+<h3>7.3 Tareas</h3>
+<p>Para cada error, compila con <code>+define+BUGn</code> y simula con <code>+UVM_CONFIG_DB_TRACE</code>. Rellena la tabla sin mirar el código del bloque: diagnostica solo con el log.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Error</th><th>Mensaje que lo delata</th><th>Herramienta que más ayudó</th><th>Causa</th><th>Corrección</th></tr></thead>
+<tbody>
+<tr><td>BUG1</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG2</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG3</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG4</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+<p>Preguntas:</p>
+<ol>
+  <li>En BUG2, el <code>set</code> y el <code>get</code> usan el mismo nombre y el mismo scope. ¿Por qué falla? Propón dos formas de arreglarlo.</li>
+  <li>En BUG4, ¿por qué no basta con que el <code>set</code> exista en algún momento?</li>
+  <li>¿Cuál de los cuatro errores habría pasado desapercibido sin el <code>uvm_fatal</code> en el <code>get</code>?</li>
+</ol>
+
+<details class="solution">
+<summary>7.4 Solución</summary>
+<div class="body">
+<div class="table-wrap"><table>
+<thead><tr><th>Error</th><th>Pista en el log</th><th>Causa</th><th>Corrección</th></tr></thead>
+<tbody>
+<tr><td>BUG1</td><td>La traza muestra un <code>set</code> de <code>Cfg</code> y un <code>get</code> de <code>cfg</code>; <code>check_config_usage</code> informa que <code>Cfg</code> nunca se leyó</td><td>Los nombres distinguen mayúsculas</td><td>Usar <code>"cfg"</code></td></tr>
+<tr><td>BUG2</td><td>Hay un <code>set</code> con tipo <code>uvm_object</code> en el scope correcto, pero el <code>get</code> de tipo <code>simple_agent_cfg</code> no lo encuentra</td><td>La base de datos separa recursos por tipo exacto; <code>uvm_object</code> no es <code>simple_agent_cfg</code></td><td>Publicar con <code>uvm_config_db #(simple_agent_cfg)</code>, o leer como <code>uvm_object</code> y hacer <code>$cast</code></td></tr>
+<tr><td>BUG3</td><td>El scope del <code>set</code> es <code>uvm_test_top.env.agt_0</code>, que no aparece en la topología; <code>check_config_usage</code> lo lista sin leer</td><td>Nombre de instancia equivocado</td><td>Usar <code>"env.agt0"</code> (cópialo de <code>print_topology</code>)</td></tr>
+<tr><td>BUG4</td><td>El <code>get</code> del agente aparece en la traza <strong>antes</strong> que el <code>set</code></td><td><code>build_phase</code> (de arriba abajo) termina para toda la jerarquía antes de que empiece cualquier <code>connect_phase</code></td><td>Mover el <code>set</code> a <code>build_phase</code>, antes de crear el env</td></tr>
+</tbody></table></div>
+<p>Respuestas: (1) ver tabla; si eliges leer como <code>uvm_object</code>, el código es <code>uvm_object tmp; if (uvm_config_object::get(this, "", "cfg", tmp) &amp;&amp; $cast(cfg, tmp)) ...</code>. (2) Porque el <code>get</code> se evalúa una sola vez, en el momento en que se ejecuta; no espera a que aparezca el valor (para eso existe <code>wait_modified</code>, Práctica 5). (3) Todos: sin el <code>uvm_fatal</code>, <code>cfg</code> queda <code>null</code> y la simulación muere más tarde con un acceso a handle nulo, lejos de la causa real.</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 8 -->
+<section id="s8">
+<h2>8. Práctica 5: config_db en secuencias y cambios dinámicos</h2>
+<p>Objetivo: configurar secuencias (que son objetos, no componentes) y reaccionar a cambios de configuración durante la simulación con <code>wait_modified()</code>. Cierra con cinco retos abiertos.</p>
+
+<h3>8.1 Leer configuración desde una secuencia</h3>
+<p>Una secuencia no tiene padre en la jerarquía, pero cuando se lanza con <code>seq.start(sqr)</code> su <code>get_full_name()</code> devuelve la ruta del secuenciador más su nombre, por ejemplo <code>uvm_test_top.env.agt0.sqr.seq</code>. Hay dos formas de leer:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Forma</th><th>Llamada <code>get</code> en <code>body()</code></th><th><code>set</code> correspondiente en el test</th></tr></thead>
+<tbody>
+<tr><td>A. Por nombre completo de la secuencia</td><td><code>get(null, get_full_name(), "n_items", n_items)</code></td><td><code>set(this, "env.agt0.sqr.*", "n_items", 8)</code></td></tr>
+<tr><td>B. A través del secuenciador</td><td><code>get(m_sequencer, "", "n_items", n_items)</code></td><td><code>set(this, "env.agt0.sqr", "n_items", 8)</code></td></tr>
+</tbody></table></div>
+<p>La forma A permite configurar secuencias concretas por nombre (<code>"env.agt0.sqr.burst_seq"</code>) e incluye las secuencias anidadas; la B configura por igual todo lo que corre en ese secuenciador.</p>
+
+<p>Modifica <code>simple_seq::body()</code>:</p>
+<pre><code class="language-verilog">task body();
+  // TODO 11: lee "n_items" (tipo int unsigned) con la forma A;
+  //          si no existe, conserva el valor por defecto (5) y emite un uvm_info
+  repeat (n_items) begin
+    req = simple_item::type_id::create("req");
+    start_item(req);
+    if (!req.randomize()) `uvm_error("RAND", "randomize falló")
+    finish_item(req);
+  end
+endtask</code></pre>
+<p>En el test, antes de crear el env: <code>uvm_config_db #(int unsigned)::set(this, "env.agt0.sqr.*", "n_items", 8);</code></p>
+<p>Tarea: verifica que el monitor de <code>agt0</code> ve 8 transacciones. Después cambia el <code>set</code> a <code>uvm_config_db #(int)</code> sin tocar la secuencia. ¿Cuántas ve ahora y por qué?</p>
+<p>Un uso clásico relacionado es arrancar una secuencia por defecto en una fase, sin código en <code>run_phase</code>:</p>
+<pre><code class="language-verilog">uvm_config_db #(uvm_object_wrapper)::set(this, "env.agt0.sqr.main_phase",
+                                         "default_sequence",
+                                         simple_seq::type_id::get());</code></pre>
+
+<h3>8.2 Reaccionar a cambios con wait_modified</h3>
+<p><code>wait_modified(cntxt, inst_name, field_name)</code> es una tarea que se bloquea hasta que alguien hace un <code>set</code> que alcanza a ese nombre. Después hay que hacer el <code>get</code> para leer el valor nuevo.</p>
+<p>En el monitor, añade a <code>run_phase</code> un proceso paralelo:</p>
+<pre><code class="language-verilog">task run_phase(uvm_phase phase);
+  fork
+    forever begin
+      // TODO 12: espera un cambio de "lvl" para este componente,
+      //          vuelve a leerlo e imprime el valor nuevo
+    end
+  join_none
+  // ... bucle de muestreo existente ...
+endtask</code></pre>
+<p>En el test, dentro de <code>run_phase</code> y en paralelo con la secuencia:</p>
+<pre><code class="language-verilog">fork
+  begin
+    #200ns uvm_config_db #(int)::set(this, "env.agt0.mon", "lvl", 5);
+    #100ns uvm_config_db #(int)::set(this, "env.*",        "lvl", 6);
+  end
+join_none</code></pre>
+<p>Tarea: anota a qué tiempos imprime el monitor de <code>agt0</code> y el de <code>agt1</code>, y qué valores.</p>
+
+<details class="solution">
+<summary>8.3 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 11
+if (!uvm_config_db #(int unsigned)::get(null, get_full_name(), "n_items", n_items))
+  `uvm_info("SEQCFG", $sformatf("n_items no configurado, uso %0d", n_items), UVM_MEDIUM)
+
+// TODO 12
+uvm_config_db #(int)::wait_modified(this, "", "lvl");
+void'(uvm_config_db #(int)::get(this, "", "lvl", lvl));
+`uvm_info("LVL", $sformatf("lvl cambió a %0d", lvl), UVM_LOW)</code></pre>
+<p>Resultados esperados:</p>
+<ul>
+  <li>Con <code>#(int)</code> en el <code>set</code>, la secuencia no encuentra el valor (tipo distinto a <code>int unsigned</code>) y envía las 5 transacciones por defecto. La traza <code>+UVM_CONFIG_DB_TRACE</code> lo confirma.</li>
+  <li>A los 200 ns solo <code>agt0.mon</code> imprime <code>lvl cambió a 5</code>. A los 300 ns imprimen ambos monitores <code>lvl cambió a 6</code>: los dos <code>set</code> tienen precedencia 1000 (fuera de <code>build_phase</code>), y gana el último.</li>
+  <li>Ten en cuenta que <code>wait_modified</code> despierta con cualquier <code>set</code> que coincida, aunque el <code>get</code> posterior devuelva otro valor con más precedencia.</li>
+</ul>
+</div>
+</details>
+
+<h3>8.4 Retos finales</h3>
+<ol>
+  <li><strong>Interfaz parametrizada</strong>: convierte la interfaz en <code>simple_if #(int W = 8)</code> y crea un agente para <code>W = 16</code>. Comprueba que <code>virtual simple_if #(16)</code> y <code>virtual simple_if #(8)</code> son tipos distintos para <code>config_db</code> y propone un <code>typedef</code> para evitar errores.</li>
+  <li><strong>Configuración jerárquica</strong>: crea <code>simple_env_cfg</code> que contenga un array de <code>simple_agent_cfg</code>. El test publica solo el <code>env_cfg</code>; el env reparte cada <code>agent_cfg</code> a su agente. Compara el número de llamadas <code>set</code> con la Práctica 3.</li>
+  <li><strong>Expresiones regulares</strong>: publica un valor que alcance solo a los monitores de agentes con índice par usando un <code>inst_name</code> entre barras. Verifícalo con <code>print_config</code>.</li>
+  <li><strong>Asignación directa frente a config_db</strong>: en el agente, sustituye el <code>set</code> hacia los hijos por <code>drv.cfg = cfg; mon.cfg = cfg;</code> justo después de crearlos. Discute ventajas (rapidez, sin búsquedas por texto) e inconvenientes (acoplamiento, no se puede sobrescribir desde el test).</li>
+  <li><strong>Configuración desde la línea de comandos</strong>: usa <code>+uvm_set_config_int=uvm_test_top.env.agt0.sqr.*,n_items,12</code> y averigua qué tipo publica (pista: es <code>uvm_bitstream_t</code>). Ajusta la secuencia para que funcione con ambas fuentes.</li>
+</ol>
+</section>
+
+<!-- ===================================================== 9 -->
+<section id="s9">
+<h2>9. Evaluación y buenas prácticas</h2>
+<p>Responde las diez preguntas sin consultar el laboratorio; si fallas más de dos, repasa la Sección 3 y repite la Práctica 3.</p>
+
+<h3>9.1 Preguntas</h3>
+<ol>
+  <li>Escribe el scope efectivo de <code>uvm_config_db#(int)::set(this, "agt*.drv", "n", 3)</code> llamado desde <code>uvm_test_top.env</code>.</li>
+  <li>¿Alcanza ese <code>set</code> a <code>uvm_test_top.env.agt0.drv</code>? ¿Y a <code>uvm_test_top.env.agt0.sub.drv</code>?</li>
+  <li>El test publica <code>n = 1</code> para <code>env.agt.drv</code> y el agente publica <code>n = 2</code> para <code>drv</code>, ambos en <code>build_phase</code>. ¿Qué lee el driver?</li>
+  <li>¿Qué cambia si el agente hace su <code>set</code> en <code>run_phase</code> y el driver vuelve a leer después?</li>
+  <li>¿Por qué <code>uvm_config_int::set(...)</code> seguido de <code>uvm_config_db#(int)::get(...)</code> devuelve 0?</li>
+  <li>¿Qué devuelve <code>get</code> si el valor no existe y qué le pasa a la variable <code>value</code>?</li>
+  <li>Nombra dos ventajas de un objeto de configuración por agente frente a muchos <code>set</code> sueltos.</li>
+  <li>¿Qué herramienta usarías para saber si un <code>set</code> nunca fue leído?</li>
+  <li>¿Desde qué fase y en qué orden deben ejecutarse <code>set</code> y <code>get</code> para un valor que el hijo necesita en su <code>build_phase</code>?</li>
+  <li>Una secuencia lanzada en <code>uvm_test_top.env.agt0.sqr</code> lee con <code>get(null, get_full_name(), "len", len)</code>. Escribe un <code>set</code> desde el test que la alcance solo a ella si se llama <code>burst_seq</code>.</li>
+</ol>
+
+<details class="solution">
+<summary>9.2 Respuestas</summary>
+<div class="body">
+<ol>
+  <li><code>uvm_test_top.env.agt*.drv</code>.</li>
+  <li>Sí a <code>agt0.drv</code>. También a <code>agt0.sub.drv</code>, porque <code>*</code> incluye puntos: <code>agt0.sub</code> coincide con <code>agt*</code>.</li>
+  <li><code>n = 1</code>: en <code>build_phase</code> gana el contexto más alto (test, precedencia 999, frente al agente, 997).</li>
+  <li>El <code>set</code> del agente en <code>run_phase</code> tiene precedencia 1000 y supera al del test: el driver lee 2.</li>
+  <li><code>uvm_config_int</code> es <code>uvm_config_db#(uvm_bitstream_t)</code>; los recursos se buscan por tipo exacto y <code>int</code> es otro tipo.</li>
+  <li>Devuelve 0 y no modifica <code>value</code>, que conserva el valor que tenía (por eso sirve como valor por defecto).</li>
+  <li>Una sola llamada <code>set</code> y <code>get</code> por agente; añadir parámetros no cambia el código de propagación; se puede aleatorizar y imprimir como objeto; cada instancia del agente recibe su propio objeto.</li>
+  <li><code>check_config_usage()</code> (en <code>report_phase</code>), apoyado por <code>+UVM_CONFIG_DB_TRACE</code>.</li>
+  <li>El padre hace <code>set</code> en su <code>build_phase</code> antes de crear al hijo (o al menos antes de que termine su propio <code>build_phase</code>); el hijo hace <code>get</code> en su <code>build_phase</code>. UVM garantiza el orden porque <code>build_phase</code> corre de arriba hacia abajo.</li>
+  <li><code>uvm_config_db#(int)::set(this, "env.agt0.sqr.burst_seq", "len", 16);</code> (con el mismo tipo que use la secuencia).</li>
+</ol>
+</div>
+</details>
+
+<h3>9.3 Buenas prácticas</h3>
+<ul>
+  <li>Comprueba siempre el retorno de <code>get</code>: <code>uvm_fatal</code> para lo obligatorio, valor por defecto para lo opcional.</li>
+  <li>Usa el mismo tipo en <code>set</code> y <code>get</code>; define <code>typedef</code> para interfaces virtuales parametrizadas.</li>
+  <li>Publica desde el top solo hacia el test (<code>"uvm_test_top"</code>), y deja que el test reparta. Evita <code>set(null, "*", ...)</code>.</li>
+  <li>Agrupa la configuración en objetos: uno por agente y, si hace falta, uno por env que los contenga.</li>
+  <li>Usa el scope más estrecho posible; desconfía de patrones como <code>"*agt*"</code>.</li>
+  <li>Recuerda que los objetos se comparten por handle: un objeto por instancia, salvo que quieras compartir a propósito.</li>
+  <li>No uses <code>config_db</code> para comunicación en tiempo de simulación entre componentes; para eso existen TLM, eventos o <code>uvm_event_pool</code>. <code>wait_modified</code> es para cambios de configuración puntuales.</li>
+  <li>Prefiere <code>get</code> explícito a la configuración automática de macros de campo.</li>
+  <li>Incluye <code>+UVM_CONFIG_DB_TRACE</code> y <code>check_config_usage()</code> en tu flujo de depuración habitual.</li>
+</ul>
+
+<h3>9.4 Referencias</h3>
+<ul>
+  <li>IEEE Std 1800.2, <em>Standard for Universal Verification Methodology Language Reference Manual</em>, secciones sobre <code>uvm_config_db</code> y <code>uvm_resource_db</code>.</li>
+  <li>Accellera, <em>UVM 1.2 Class Reference</em> y su código fuente (<code>uvm_config_db.svh</code>, <code>uvm_resource.svh</code>): leer la implementación de <code>set</code> y <code>get</code> aclara las reglas de precedencia.</li>
+  <li>Verification Academy (Siemens EDA), <em>UVM Cookbook</em>, capítulo de configuración del testbench.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/verilog.min.js"></script>
+<script>
+  if (window.hljs) { hljs.highlightAll(); }
+</script>
+</body>
+</html>

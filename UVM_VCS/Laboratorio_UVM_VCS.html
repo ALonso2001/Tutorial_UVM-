@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio UVM con VCS</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<style>
+:root{
+  --bg:#f7f8fa; --panel:#ffffff; --text:#1d2330; --muted:#5b6475; --line:#dde2ea;
+  --accent:#0b6e99; --accent2:#13a3c4; --code:#f3f5f8;
+  --theory:#e8f3fb; --theory-b:#0b6e99;
+  --note:#eef7ee; --note-b:#2e7d32;
+  --warn:#fff6e5; --warn-b:#d48806;
+  --ex:#f4eefb; --ex-b:#6b3fa0;
+  --q:#fdeef0; --q-b:#b3263e;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f141b; --panel:#161c25; --text:#e3e8ef; --muted:#9aa5b5; --line:#2a3340;
+    --accent:#4fb7e0; --accent2:#6fd3ea; --code:#0d1117;
+    --theory:#12283a; --note:#13291a; --warn:#2e2410; --ex:#241a33; --q:#331820;
+    --theory-b:#4fb7e0; --note-b:#5fbf68; --warn-b:#e2a83a; --ex-b:#a985d9; --q-b:#e0667c;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+a{color:var(--accent)}
+header.hero{background:linear-gradient(135deg,#0a3d5c,#0b6e99 55%,#13a3c4);color:#fff;padding:48px 24px 40px}
+header.hero .wrap{max-width:1100px;margin:auto}
+header.hero h1{margin:0 0 8px;font-size:2.2rem;letter-spacing:.5px}
+header.hero p{margin:4px 0;opacity:.92}
+.layout{max-width:1300px;margin:auto;display:grid;grid-template-columns:270px 1fr;gap:28px;padding:24px 16px}
+nav.toc{position:sticky;top:12px;align-self:start;max-height:calc(100vh - 24px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 12px;font-size:.88rem}
+nav.toc b{display:block;margin:10px 6px 4px;color:var(--muted);text-transform:uppercase;font-size:.72rem;letter-spacing:1px}
+nav.toc a{display:block;padding:3px 8px;border-radius:6px;text-decoration:none;color:var(--text)}
+nav.toc a:hover,nav.toc a.active{background:var(--theory);color:var(--accent)}
+main{min-width:0}
+section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px 28px;margin-bottom:22px}
+h2{margin-top:0;color:var(--accent);border-bottom:2px solid var(--line);padding-bottom:6px}
+h3{margin-top:28px}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;margin-right:6px;vertical-align:middle;text-transform:uppercase;letter-spacing:.5px}
+.tag.t{background:var(--theory);color:var(--theory-b)} .tag.l{background:var(--note);color:var(--note-b)} .tag.p2{background:var(--ex);color:var(--ex-b)}
+.box{border-left:5px solid;border-radius:8px;padding:12px 16px;margin:16px 0}
+.box>strong:first-child{display:block;margin-bottom:4px}
+.box.theory{background:var(--theory);border-color:var(--theory-b)}
+.box.note{background:var(--note);border-color:var(--note-b)}
+.box.warn{background:var(--warn);border-color:var(--warn-b)}
+.box.ex{background:var(--ex);border-color:var(--ex-b)}
+.box.q{background:var(--q);border-color:var(--q-b)}
+code{font-family:"JetBrains Mono",Consolas,Menlo,monospace;font-size:.88em;background:var(--code);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.code{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:14px 0}
+.code-head{display:flex;justify-content:space-between;align-items:center;background:var(--theory);padding:6px 12px;font-size:.85rem}
+.fname{font-family:Consolas,Menlo,monospace;font-weight:600;color:var(--accent)}
+.code-head button{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:6px;padding:2px 10px;margin-left:6px;cursor:pointer;font-size:.8rem}
+.code-head button:hover{border-color:var(--accent)}
+.code pre{margin:0;padding:14px 16px;overflow:auto;background:var(--code);font-size:.84rem;line-height:1.5;max-height:620px}
+pre.term{background:#0d1117;color:#d6deeb;border-radius:10px;padding:14px 16px;overflow:auto;font-size:.84rem}
+pre.term .c{color:#7fdbca}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--theory)}
+figure{margin:18px 0;text-align:center}
+figcaption{color:var(--muted);font-size:.85rem;margin-top:6px}
+svg text{font-family:"Segoe UI",system-ui,sans-serif}
+.phases{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.phases span{padding:6px 10px;border-radius:6px;font-size:.85rem;font-family:Consolas,monospace}
+.ph-f{background:var(--theory);border:1px solid var(--theory-b)}
+.ph-t{background:var(--warn);border:1px solid var(--warn-b)}
+.ph-c{background:var(--note);border:1px solid var(--note-b)}
+details{margin:8px 0;border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+details summary{cursor:pointer;font-weight:600}
+.check li{list-style:"☐  "}
+@media (max-width:900px){.layout{grid-template-columns:1fr}nav.toc{position:static;max-height:none}section{padding:18px 16px}}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <h1>Laboratorio guiado: Ambiente de verificación UVM</h1>
+  <p>Verificación de circuitos integrados con SystemVerilog y UVM · Simulador Synopsys VCS</p>
+  <p>Basado en la presentación <em>“Ejemplo test UVM”</em>: switch sencillo y controlador de registros (<code>reg_ctrl</code>).</p>
+</div></header>
+
+<div class="layout">
+<nav class="toc" id="toc">
+  <b>Inicio</b>
+  <a href="#intro">0. Objetivos y requisitos</a>
+  <b>Teoría</b>
+  <a href="#t-why">T1. ¿Por qué UVM?</a>
+  <a href="#t-arch">T2. Arquitectura del ambiente</a>
+  <a href="#t-classes">T3. Objetos y componentes</a>
+  <a href="#t-factory">T4. Fábrica y macros</a>
+  <a href="#t-phases">T5. Fases</a>
+  <a href="#t-config">T6. Interfaces virtuales y config_db</a>
+  <a href="#t-tlm">T7. Comunicación TLM</a>
+  <a href="#t-seq">T8. Secuencias y sequencer</a>
+  <a href="#t-obj">T9. Objeciones</a>
+  <a href="#t-report">T10. Mensajes y verbosidad</a>
+  <a href="#t-rand">T11. Aleatorización</a>
+  <a href="#t-timing">T12. Temporización en SV</a>
+  <b>Parte 1 · Switch</b>
+  <a href="#p1">P1. Preparar el directorio</a>
+  <a href="#p2">P2. El DUT</a>
+  <a href="#p3">P3. La interfaz</a>
+  <a href="#p4">P4. Sequence item</a>
+  <a href="#p5">P5. Secuencia</a>
+  <a href="#p6">P6. Driver</a>
+  <a href="#p7">P7. Monitor</a>
+  <a href="#p8">P8. Agente</a>
+  <a href="#p9">P9. Scoreboard</a>
+  <a href="#p10">P10. Ambiente</a>
+  <a href="#p11">P11. Test</a>
+  <a href="#p12">P12. Top del testbench</a>
+  <a href="#p13">P13. Paquete y lista de archivos</a>
+  <a href="#p14">P14. Compilar y simular con VCS</a>
+  <a href="#p15">P15. Analizar los resultados</a>
+  <a href="#p16">P16. Ejercicios</a>
+  <b>Parte 2 · reg_ctrl</b>
+  <a href="#r1">R1. El DUT y su protocolo</a>
+  <a href="#r2">R2. Código del ambiente</a>
+  <a href="#r3">R3. Ejecutar y ejercicios</a>
+  <b>Anexos</b>
+  <a href="#a1">A1. Cambios respecto a la presentación</a>
+  <a href="#a2">A2. Errores comunes</a>
+  <a href="#a3">A3. Preguntas de repaso</a>
+  <a href="#a4">A4. Referencias</a>
+</nav>
+
+<main>
+
+<!-- ================================================================= -->
+<section id="intro">
+<h2>0. Objetivos y requisitos</h2>
+<p>Al terminar este laboratorio el estudiante será capaz de:</p>
+<ul>
+  <li>Explicar la función de cada componente de un ambiente UVM (sequence item, secuencia, sequencer, driver, monitor, agente, scoreboard, ambiente y test).</li>
+  <li>Entender los mecanismos de UVM que hacen funcionar el código: fábrica, fases, <code>uvm_config_db</code>, puertos TLM, objeciones y mensajes.</li>
+  <li>Escribir, compilar y simular con <strong>VCS</strong> un ambiente UVM completo para un DUT sencillo.</li>
+  <li>Interpretar el log de simulación, detectar errores del DUT y extender el ambiente.</li>
+</ul>
+
+<h3>Requisitos</h3>
+<table>
+<tr><th>Elemento</th><th>Detalle</th></tr>
+<tr><td>Simulador</td><td>Synopsys VCS (cualquier versión reciente con UVM integrado). Opcional: Verdi o DVE para formas de onda.</td></tr>
+<tr><td>Biblioteca UVM</td><td>La que trae VCS. Se activa con <code>-ntb_opts uvm-1.2</code> (o <code>uvm</code> para 1.1d, <code>uvm-ieee</code> para IEEE 1800.2).</td></tr>
+<tr><td>Conocimientos previos</td><td>Verilog RTL, clases en SystemVerilog (herencia, <code>virtual</code>, handles), <code>rand</code>/<code>constraint</code> básico.</td></tr>
+<tr><td>Sin VCS</td><td>Puede usar EDA Playground (<a href="https://www.edaplayground.com/x/5LwP">enlace de la presentación</a>) seleccionando “Synopsys VCS” y “UVM 1.2”.</td></tr>
+</table>
+
+<h3>Estructura de archivos que construiremos</h3>
+<pre class="term">uvm_lab/
+├── switch/                 <span class="c"># Parte 1</span>
+│   ├── switch.sv           <span class="c"># DUT</span>
+│   ├── switch_if.sv        <span class="c"># interfaz</span>
+│   ├── switch_item.sv      <span class="c"># transacción</span>
+│   ├── gen_item_seq.sv     <span class="c"># secuencia</span>
+│   ├── driver.sv  monitor.sv  agent.sv
+│   ├── scoreboard.sv  env.sv  test.sv
+│   ├── switch_pkg.sv       <span class="c"># paquete con todas las clases</span>
+│   ├── tb_top.sv           <span class="c"># módulo superior</span>
+│   ├── files.f  Makefile  run.sh
+└── reg_ctrl/               <span class="c"># Parte 2 (misma estructura)</span></pre>
+
+<div class="box note"><strong>Cómo usar esta guía</strong>
+Primero lea las secciones de <em>Teoría</em> (T1–T12). Después siga los pasos P1–P16 en orden: en cada paso se explica el código y se proporciona el archivo completo (botones <em>Copiar</em> y <em>Descargar</em>). Las cajas violetas son ejercicios; las rojas, preguntas para comprobar su comprensión.</div>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-why">
+<h2><span class="tag t">Teoría</span>T1. ¿Por qué UVM?</h2>
+<p>Un testbench tradicional en Verilog suele ser un único módulo con estímulos escritos a mano y comparaciones visuales en formas de onda. Ese enfoque no escala: cuando el diseño crece, los casos de prueba se multiplican y cada nuevo proyecto empieza casi desde cero.</p>
+<p>La <strong>Universal Verification Methodology (UVM)</strong> es una biblioteca de clases de SystemVerilog, estandarizada como IEEE 1800.2, que define <em>cómo</em> organizar un testbench para que sea:</p>
+<ul>
+  <li><strong>Por capas:</strong> el estímulo se describe como <em>transacciones</em> abstractas (p. ej. “escribir el dato 0xAB en la dirección 0x10”), y solo el driver sabe convertirlas en señales.</li>
+  <li><strong>Aleatorio con restricciones (CRV):</strong> en lugar de escribir cada caso, se describen las reglas y el simulador genera miles de combinaciones.</li>
+  <li><strong>Autoverificable:</strong> un scoreboard compara automáticamente la salida contra lo esperado; nadie revisa ondas a mano.</li>
+  <li><strong>Reutilizable:</strong> un agente para un protocolo (p. ej. AXI) se reutiliza en cualquier proyecto que use ese protocolo.</li>
+  <li><strong>Configurable sin editar código:</strong> gracias a la fábrica y a la base de datos de configuración, un test puede reemplazar componentes o cambiar parámetros.</li>
+</ul>
+<div class="box theory"><strong>Idea clave</strong>
+Separar <em>qué</em> se prueba (secuencias y tests) de <em>cómo</em> se aplica al hardware (driver/monitor) y de <em>cómo</em> se decide si está bien (scoreboard).</div>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-arch">
+<h2><span class="tag t">Teoría</span>T2. Arquitectura del ambiente</h2>
+<p>El diagrama de la presentación muestra la estructura típica. La jerarquía de clases (quién contiene a quién) es: <code>tb_top</code> (módulo) → <code>test</code> → <code>env</code> → <code>agent</code> + <code>scoreboard</code>; y dentro del agente: <code>sequencer</code>, <code>driver</code> y <code>monitor</code>.</p>
+
+<figure>
+<svg viewBox="0 0 760 430" width="100%" style="max-width:760px" role="img" aria-label="Arquitectura UVM">
+  <defs><marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 z" fill="#5b6475"/></marker></defs>
+  <rect x="5" y="5" width="750" height="420" rx="10" fill="none" stroke="#8a94a6" stroke-dasharray="6 4"/>
+  <text x="680" y="28" font-style="italic" fill="#5b6475">tb_top</text>
+  <rect x="20" y="35" width="520" height="375" rx="8" fill="#e6ebf2" stroke="#8a94a6"/><text x="34" y="58" fill="#1d2330" font-weight="600">Test</text>
+  <rect x="70" y="68" width="455" height="330" rx="8" fill="#ffffff" stroke="#8a94a6"/><text x="84" y="90" fill="#1d2330" font-weight="600">Env</text>
+  <rect x="180" y="82" width="300" height="56" rx="4" fill="#fff8c4" stroke="#a89a3a"/><text x="330" y="115" text-anchor="middle" fill="#1d2330">Scoreboard</text>
+  <rect x="150" y="175" width="360" height="210" rx="6" fill="#f1f3f6" stroke="#8a94a6"/><text x="164" y="197" fill="#1d2330" font-weight="600">Agent</text>
+  <rect x="350" y="200" width="110" height="80" rx="4" fill="#c9dcf3" stroke="#4a78b5"/><text x="405" y="245" text-anchor="middle" fill="#1f5aa6">Monitor</text>
+  <rect x="350" y="300" width="110" height="70" rx="4" fill="#d9d9d9" stroke="#777"/><text x="405" y="340" text-anchor="middle" fill="#333">Driver</text>
+  <rect x="175" y="318" width="110" height="36" rx="4" fill="#f6d5d5" stroke="#b55"/><text x="230" y="341" text-anchor="middle" fill="#a33">Sequencer</text>
+  <rect x="85" y="250" width="50" height="22" fill="#e6f0d8" stroke="#7a9a5a"/><rect x="90" y="256" width="50" height="22" fill="#e6f0d8" stroke="#7a9a5a"/><rect x="95" y="262" width="50" height="22" fill="#e6f0d8" stroke="#7a9a5a"/>
+  <text x="120" y="302" text-anchor="middle" font-size="11" fill="#1d2330">Secuencia</text>
+  <path d="M120,286 C120,330 150,336 173,336" fill="none" stroke="#5b6475" marker-end="url(#ar)"/>
+  <line x1="287" y1="336" x2="348" y2="336" stroke="#5b6475" marker-end="url(#ar)"/><text x="317" y="356" text-anchor="middle" font-size="10" fill="#5b6475">TLM port</text>
+  <line x1="405" y1="198" x2="405" y2="140" stroke="#5b6475" marker-end="url(#ar)"/><text x="412" y="165" font-size="10" fill="#5b6475">analysis port</text>
+  <rect x="580" y="200" width="36" height="170" rx="3" fill="#fbd9bd" stroke="#c98a52"/><text x="602" y="290" text-anchor="middle" fill="#1d2330" font-size="12" transform="rotate(-90 602 290)">Interface</text>
+  <rect x="660" y="180" width="80" height="210" rx="3" fill="#7d7d7d"/><text x="700" y="290" text-anchor="middle" fill="#fff" font-weight="600">DUT</text>
+  <line x1="462" y1="335" x2="578" y2="335" stroke="#5b6475" marker-end="url(#ar)"/>
+  <line x1="578" y1="240" x2="462" y2="240" stroke="#5b6475" marker-end="url(#ar)"/>
+  <line x1="618" y1="335" x2="658" y2="335" stroke="#5b6475" marker-end="url(#ar)"/>
+  <line x1="658" y1="240" x2="618" y2="240" stroke="#5b6475" marker-end="url(#ar)"/>
+</svg>
+<figcaption>Figura 1. Arquitectura del ambiente del switch (equivalente al diagrama de la presentación).</figcaption>
+</figure>
+
+<table>
+<tr><th>Componente</th><th>Clase base UVM</th><th>Responsabilidad</th></tr>
+<tr><td>Sequence item</td><td><code>uvm_sequence_item</code></td><td>Una transacción: los campos de un estímulo y de su respuesta.</td></tr>
+<tr><td>Secuencia</td><td><code>uvm_sequence</code></td><td>Genera una serie de transacciones (el “escenario”).</td></tr>
+<tr><td>Sequencer</td><td><code>uvm_sequencer</code></td><td>Árbitro que entrega las transacciones de las secuencias al driver.</td></tr>
+<tr><td>Driver</td><td><code>uvm_driver</code></td><td>Convierte transacciones en señales del DUT (nivel de pines).</td></tr>
+<tr><td>Monitor</td><td><code>uvm_monitor</code></td><td>Observa las señales (sin modificarlas) y reconstruye transacciones.</td></tr>
+<tr><td>Agente</td><td><code>uvm_agent</code></td><td>Agrupa sequencer, driver y monitor de una interfaz.</td></tr>
+<tr><td>Scoreboard</td><td><code>uvm_scoreboard</code></td><td>Compara lo observado con lo esperado (modelo de referencia).</td></tr>
+<tr><td>Ambiente</td><td><code>uvm_env</code></td><td>Contenedor reutilizable de agentes, scoreboards, cobertura…</td></tr>
+<tr><td>Test</td><td><code>uvm_test</code></td><td>Configura el ambiente y decide qué secuencias correr.</td></tr>
+<tr><td>Interfaz</td><td><code>interface</code> (SV, no UVM)</td><td>Puente entre el mundo de clases (dinámico) y el mundo de módulos (estático).</td></tr>
+</table>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-classes">
+<h2><span class="tag t">Teoría</span>T3. Objetos y componentes</h2>
+<p>Todas las clases UVM heredan de <code>uvm_object</code>. De ahí se ramifican dos familias con comportamientos muy distintos:</p>
+<table>
+<tr><th></th><th><code>uvm_object</code> (datos)</th><th><code>uvm_component</code> (estructura)</th></tr>
+<tr><td>Ejemplos</td><td>sequence items, secuencias, objetos de configuración</td><td>driver, monitor, agente, scoreboard, env, test</td></tr>
+<tr><td>Vida</td><td>Se crean y destruyen continuamente durante la simulación</td><td>Se crean una sola vez al inicio (fase build) y viven toda la simulación</td></tr>
+<tr><td>Constructor</td><td><code>new(string name)</code></td><td><code>new(string name, uvm_component parent)</code></td></tr>
+<tr><td>Jerarquía</td><td>No tienen padre</td><td>Tienen padre ⇒ forman un árbol con nombres como <code>uvm_test_top.e0.a0.d0</code></td></tr>
+<tr><td>Fases</td><td>No</td><td>Sí (build, connect, run…)</td></tr>
+<tr><td>Macro de registro</td><td><code>`uvm_object_utils</code></td><td><code>`uvm_component_utils</code></td></tr>
+</table>
+<div class="box theory"><strong>¿Por qué importa el <code>parent</code>?</strong>
+Al crear un componente se le pasa <code>this</code> como padre. Así UVM construye el árbol jerárquico, que se usa para nombrar componentes, ejecutar las fases en orden y resolver las rutas de <code>uvm_config_db</code> (por ejemplo <code>"e0.a0.*"</code>).</div>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-factory">
+<h2><span class="tag t">Teoría</span>T4. La fábrica (factory) y las macros de utilidad</h2>
+<p>En todo el ejemplo los objetos se crean así:</p>
+<pre class="term">d0 = driver::type_id::create("d0", this);     <span class="c">// en lugar de  d0 = new("d0", this);</span></pre>
+<p><code>type_id::create()</code> pide el objeto a la <strong>fábrica</strong> de UVM. La ventaja es que un test puede ordenar “cada vez que alguien pida un <code>driver</code>, entrégale un <code>driver_con_errores</code>” (un <em>override</em>) sin modificar el agente:</p>
+<pre class="term">driver::type_id::set_type_override(driver_con_errores::get_type());</pre>
+<p>Para que una clase pueda crearse con la fábrica debe estar <strong>registrada</strong>, y eso hacen las macros:</p>
+<ul>
+  <li><code>`uvm_component_utils(driver)</code> — registra un componente.</li>
+  <li><code>`uvm_object_utils(gen_item_seq)</code> — registra un objeto.</li>
+  <li><code>`uvm_object_utils_begin(switch_item)</code> … <code>`uvm_field_int(addr, UVM_DEFAULT)</code> … <code>`uvm_object_utils_end</code> — registra el objeto <em>y</em> además genera automáticamente <code>print()</code>, <code>copy()</code>, <code>compare()</code>, <code>clone()</code>, etc. para los campos listados. <code>UVM_DEFAULT</code> activa todas esas operaciones para el campo.</li>
+</ul>
+<div class="box warn"><strong>Regla práctica</strong>
+Use siempre <code>type_id::create</code> para componentes y transacciones. El monitor del ejemplo usa <code>switch_item item = new;</code>, lo cual funciona, pero impide aplicar overrides de fábrica a ese objeto.</div>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-phases">
+<h2><span class="tag t">Teoría</span>T5. Las fases de UVM</h2>
+<p>Los componentes no tienen un “main”. En su lugar, UVM llama a métodos predefinidos (fases) en un orden fijo, sincronizado en todo el árbol. Basta con sobrescribir los que se necesiten:</p>
+<div class="phases">
+  <span class="ph-f">build_phase ↓</span><span class="ph-f">connect_phase ↑</span><span class="ph-f">end_of_elaboration_phase</span><span class="ph-f">start_of_simulation_phase</span>
+  <span class="ph-t">run_phase (task, consume tiempo)</span>
+  <span class="ph-c">extract_phase</span><span class="ph-c">check_phase</span><span class="ph-c">report_phase</span><span class="ph-c">final_phase</span>
+</div>
+<table>
+<tr><th>Fase</th><th>Tipo</th><th>Uso en el ejemplo</th></tr>
+<tr><td><code>build_phase</code></td><td>function, de arriba hacia abajo</td><td>Crear los hijos (<code>type_id::create</code>) y obtener configuración (<code>uvm_config_db::get</code>). Va de arriba hacia abajo porque un padre debe existir antes de crear a sus hijos.</td></tr>
+<tr><td><code>connect_phase</code></td><td>function, de abajo hacia arriba</td><td>Conectar puertos TLM: driver↔sequencer en el agente; monitor→scoreboard en el ambiente.</td></tr>
+<tr><td><code>end_of_elaboration_phase</code></td><td>function</td><td>Ajustes finales; aquí imprimimos la topología.</td></tr>
+<tr><td><code>run_phase</code></td><td><strong>task</strong> (consume tiempo)</td><td>Se ejecuta en paralelo en todos los componentes: el driver maneja pines, el monitor observa, el test arranca la secuencia.</td></tr>
+<tr><td><code>report_phase</code></td><td>function</td><td>Imprimir resúmenes (lo añadimos al scoreboard).</td></tr>
+</table>
+<div class="box warn"><strong>Siempre llame a <code>super.xxx_phase(phase)</code></strong>
+Es una buena práctica que verá en todo el código; algunas clases base realizan trabajo (p. ej. configuración automática de campos) en su implementación.</div>
+<p><code>run_test("test")</code>, llamado desde <code>tb_top</code>, crea el test con la fábrica (con el nombre de instancia <code>uvm_test_top</code>) y dispara todas las fases. El argumento <code>+UVM_TESTNAME=...</code> en la línea de comandos tiene prioridad, lo que permite elegir el test sin recompilar.</p>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-config">
+<h2><span class="tag t">Teoría</span>T6. Interfaces virtuales y <code>uvm_config_db</code></h2>
+<p>El DUT y la <code>interface</code> son elementos <em>estáticos</em> (existen desde la elaboración). Las clases son <em>dinámicas</em> (se crean en tiempo de ejecución) y no pueden contener una interfaz directamente. La solución es la <strong>interfaz virtual</strong>: un handle (puntero) a una instancia de interfaz.</p>
+<pre class="term">virtual switch_if vif;     <span class="c">// handle; vif.addr accede a la señal real</span></pre>
+<p>¿Cómo llega ese handle desde el módulo hasta el driver? Mediante <code>uvm_config_db</code>, una base de datos global indexada por <em>ruta jerárquica</em> + <em>nombre</em>:</p>
+<pre class="term"><span class="c">// set(contexto, ruta_relativa, nombre, valor)</span>
+uvm_config_db#(virtual switch_if)::set(null, "uvm_test_top", "switch_vif", _if);   <span class="c">// tb_top</span>
+uvm_config_db#(virtual switch_if)::set(this, "e0.a0.*",     "switch_vif", vif);   <span class="c">// test</span>
+<span class="c">// get(contexto, ruta_relativa, nombre, variable_destino) devuelve 1 si lo encontró</span>
+uvm_config_db#(virtual switch_if)::get(this, "", "switch_vif", vif);                <span class="c">// driver/monitor</span></pre>
+<p>Flujo en el ejemplo:</p>
+<ol>
+  <li><code>tb_top</code> publica la interfaz para <code>uvm_test_top</code> (el test).</li>
+  <li>El test la obtiene y la vuelve a publicar para todo lo que esté debajo de <code>uvm_test_top.e0.a0</code> (el comodín <code>*</code> incluye a <code>d0</code> y <code>m0</code>).</li>
+  <li>Driver y monitor la obtienen en su <code>build_phase</code>. Si no la encuentran, <code>`uvm_fatal</code> detiene la simulación con un mensaje claro.</li>
+</ol>
+<div class="box warn"><strong>El tipo, el nombre y la ruta deben coincidir exactamente.</strong>
+Un <code>set</code> con <code>"switch_vif"</code> y un <code>get</code> con <code>"switch_if"</code> producen el fatal “Could not get vif”. Es el error más común en un primer ambiente UVM.</div>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-tlm">
+<h2><span class="tag t">Teoría</span>T7. Comunicación TLM</h2>
+<p>Los componentes no se llaman directamente entre sí; se comunican por <strong>puertos TLM</strong> (Transaction Level Modeling). Así un componente no necesita saber quién está del otro lado, lo que favorece la reutilización. En el ejemplo hay dos conexiones:</p>
+<h3>a) Sequencer → Driver (bidireccional, “pull”)</h3>
+<p>El driver tiene <code>seq_item_port</code> y el sequencer <code>seq_item_export</code>. Se conectan en el agente:</p>
+<pre class="term">d0.seq_item_port.connect(s0.seq_item_export);</pre>
+<p>El driver <em>pide</em> transacciones con <code>get_next_item()</code> y avisa que terminó con <code>item_done()</code>.</p>
+<h3>b) Monitor → Scoreboard (unidireccional, difusión)</h3>
+<p>El monitor tiene un <code>uvm_analysis_port</code>; el scoreboard un <code>uvm_analysis_imp</code>. Se conectan en el ambiente:</p>
+<pre class="term">a0.m0.mon_analysis_port.connect(sb0.m_analysis_imp);</pre>
+<p>Cuando el monitor llama <code>mon_analysis_port.write(item)</code>, UVM llama inmediatamente a la función <code>write(item)</code> del scoreboard. Un analysis port puede conectarse a <em>varios</em> receptores (scoreboard, cobertura, etc.) y funciona aunque no haya ninguno conectado.</p>
+<div class="box theory"><strong>¿Por qué <code>uvm_analysis_imp #(switch_item, scoreboard)</code> lleva dos parámetros?</strong>
+El segundo parámetro indica la clase que implementa la función <code>write()</code>. Por eso el scoreboard <em>debe</em> definir <code>function void write(switch_item item)</code> con exactamente esa firma.</div>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-seq">
+<h2><span class="tag t">Teoría</span>T8. Secuencias, sequencer y el “handshake”</h2>
+<p>Una secuencia es un <code>uvm_object</code> cuyo método <code>body()</code> genera transacciones. Se ejecuta sobre un sequencer con <code>seq.start(e0.a0.s0)</code>. El intercambio entre secuencia, sequencer y driver es:</p>
+<figure>
+<svg viewBox="0 0 700 330" width="100%" style="max-width:700px" role="img" aria-label="Handshake secuencia-driver">
+  <defs><marker id="a2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 z" fill="#0b6e99"/></marker></defs>
+  <g font-size="13" fill="currentColor">
+  <text x="110" y="22" text-anchor="middle" font-weight="600" fill="#0b6e99">Secuencia</text>
+  <text x="350" y="22" text-anchor="middle" font-weight="600" fill="#0b6e99">Sequencer</text>
+  <text x="590" y="22" text-anchor="middle" font-weight="600" fill="#0b6e99">Driver</text>
+  </g>
+  <g stroke="#8a94a6" stroke-dasharray="4 4"><line x1="110" y1="30" x2="110" y2="320"/><line x1="350" y1="30" x2="350" y2="320"/><line x1="590" y1="30" x2="590" y2="320"/></g>
+  <g stroke="#0b6e99" marker-end="url(#a2)">
+    <line x1="590" y1="55" x2="355" y2="55"/>
+    <line x1="110" y1="95" x2="345" y2="95"/>
+    <line x1="350" y1="125" x2="115" y2="125"/>
+    <line x1="110" y1="170" x2="345" y2="170"/>
+    <line x1="350" y1="200" x2="585" y2="200"/>
+    <line x1="590" y1="260" x2="355" y2="260"/>
+    <line x1="350" y1="290" x2="115" y2="290"/>
+  </g>
+  <g font-size="12" fill="#5b6475">
+    <text x="470" y="49" text-anchor="middle">1. get_next_item() — bloquea</text>
+    <text x="230" y="89" text-anchor="middle">2. start_item(item) — pide turno</text>
+    <text x="230" y="119" text-anchor="middle">3. turno concedido</text>
+    <text x="230" y="150" text-anchor="middle">4. item.randomize()</text>
+    <text x="230" y="164" text-anchor="middle">5. finish_item(item)</text>
+    <text x="470" y="194" text-anchor="middle">6. get_next_item retorna el item</text>
+    <text x="590" y="230" text-anchor="middle">7. drive_item()</text>
+    <text x="470" y="254" text-anchor="middle">8. item_done()</text>
+    <text x="230" y="284" text-anchor="middle">9. finish_item retorna</text>
+  </g>
+</svg>
+<figcaption>Figura 2. Handshake entre secuencia, sequencer y driver.</figcaption>
+</figure>
+<ul>
+  <li>Aleatorizar <em>después</em> de <code>start_item</code> (paso 4) permite “aleatorización tardía”: el item se genera justo cuando el driver lo va a usar.</li>
+  <li><code>finish_item</code> no retorna hasta que el driver llama <code>item_done</code>: la secuencia avanza al ritmo del DUT.</li>
+  <li>La macro <code>`uvm_do(item)</code> que aparece en la presentación es un atajo de <code>create + start_item + randomize + finish_item</code>. Es cómoda pero oculta el proceso; en este laboratorio usamos la forma explícita.</li>
+</ul>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-obj">
+<h2><span class="tag t">Teoría</span>T9. Objeciones: ¿cuándo termina la simulación?</h2>
+<p>El driver y el monitor contienen lazos <code>forever</code>: nunca terminan por sí mismos. UVM usa <strong>objeciones</strong> para decidir cuándo finalizar la <code>run_phase</code>:</p>
+<pre class="term">phase.raise_objection(this);   <span class="c">// "no terminen todavía, estoy trabajando"</span>
+...                             <span class="c">// reset + secuencia</span>
+phase.drop_objection(this);    <span class="c">// "ya terminé"</span></pre>
+<p>Cuando el contador de objeciones vuelve a cero, UVM termina la <code>run_phase</code> (matando los lazos <code>forever</code>) y continúa con <code>extract</code>, <code>check</code>, <code>report</code> y <code>final</code>.</p>
+<div class="box warn"><strong>Errores típicos</strong>
+<ul style="margin:4px 0">
+<li>No levantar ninguna objeción ⇒ la simulación termina en el tiempo 0 sin hacer nada.</li>
+<li>Bajarla demasiado pronto ⇒ la última transacción no llega al scoreboard. Por eso añadimos <code>repeat(5) @(posedge vif.clk)</code> antes de <code>drop_objection</code> (la segunda prueba de la presentación usa <code>#200</code> con el mismo propósito).</li>
+</ul></div>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-report">
+<h2><span class="tag t">Teoría</span>T10. Mensajes y verbosidad</h2>
+<table>
+<tr><th>Macro</th><th>Efecto</th></tr>
+<tr><td><code>`uvm_info(ID, MSG, VERBOSIDAD)</code></td><td>Mensaje informativo; solo se imprime si su verbosidad ≤ la verbosidad global.</td></tr>
+<tr><td><code>`uvm_warning(ID, MSG)</code></td><td>Advertencia; siempre se imprime.</td></tr>
+<tr><td><code>`uvm_error(ID, MSG)</code></td><td>Error; se cuenta en el resumen final. La simulación continúa.</td></tr>
+<tr><td><code>`uvm_fatal(ID, MSG)</code></td><td>Error fatal; detiene la simulación inmediatamente.</td></tr>
+</table>
+<p>Niveles de verbosidad: <code>UVM_NONE</code> &lt; <code>UVM_LOW</code> &lt; <code>UVM_MEDIUM</code> (por defecto) &lt; <code>UVM_HIGH</code> &lt; <code>UVM_FULL</code> &lt; <code>UVM_DEBUG</code>. Se cambian sin recompilar: <code>+UVM_VERBOSITY=UVM_HIGH</code>.</p>
+<p>El <code>ID</code> (por ejemplo <code>"DRV"</code>, <code>"SCBD"</code>) permite filtrar el log con <code>grep</code>. Al final de la simulación UVM imprime el <em>UVM Report Summary</em> con el número de mensajes de cada severidad: <strong>un test pasa si tiene 0 UVM_ERROR y 0 UVM_FATAL</strong>.</p>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-rand">
+<h2><span class="tag t">Teoría</span>T11. Aleatorización con restricciones</h2>
+<ul>
+  <li><code>rand bit [7:0] addr;</code> — el campo recibe un valor aleatorio cada vez que se llama <code>obj.randomize()</code>. Los campos sin <code>rand</code> (p. ej. <code>addr_a</code>) no cambian: son respuestas que llena el monitor.</li>
+  <li><code>constraint c1 { num inside {[2:5]}; }</code> — limita los valores posibles (aquí, entre 2 y 5 transacciones).</li>
+  <li><code>randomize()</code> devuelve 1 si encontró una solución y 0 si las restricciones son contradictorias. <strong>Siempre verifique el valor de retorno</strong>; si se ignora, VCS emite una advertencia y un fallo pasaría desapercibido.</li>
+  <li><code>seq.randomize() with { num inside {[20:30]}; }</code> — agrega restricciones <em>en línea</em> desde el test.</li>
+  <li><code>soft</code> — una restricción blanda cede ante otra que la contradiga. En la Parte 2, la secuencia tiene <code>soft num inside {[2:5]}</code> y el test pide <code>[20:30]</code>: sin <code>soft</code> la aleatorización fallaría.</li>
+  <li>La semilla se controla en VCS con <code>+ntb_random_seed=N</code>. Misma semilla ⇒ misma simulación (reproducible).</li>
+</ul>
+</section>
+
+<!-- ================================================================= -->
+<section id="t-timing">
+<h2><span class="tag t">Teoría</span>T12. Temporización en SystemVerilog (para entender driver y monitor)</h2>
+<h3>Asignación no bloqueante (<code>&lt;=</code>) y regiones de evaluación</h3>
+<p>En cada flanco de reloj el simulador primero ejecuta todo el código activo (lecturas, <code>@(posedge clk)</code> que despiertan, etc.) y solo después actualiza las variables asignadas con <code>&lt;=</code> (región NBA). Consecuencias:</p>
+<ul>
+  <li>Cuando el driver escribe <code>vif.vld &lt;= 1</code> justo después de un flanco, el DUT y el monitor ven el nuevo valor <em>en el siguiente</em> flanco. No hay carrera.</li>
+  <li>En el driver, <code>vif.vld &lt;= 0</code> seguido (en el mismo instante) por <code>vif.vld &lt;= 1</code> de la siguiente transacción deja <code>vld = 1</code>: la última asignación NBA gana. Por eso transacciones consecutivas salen una por ciclo, sin huecos.</li>
+  <li>Cuando el monitor lee <code>vif.addr_a</code> en un flanco, lee el valor <em>antes</em> de que el DUT lo actualice en ese mismo flanco.</li>
+</ul>
+<h3><code>fork … join</code></h3>
+<p>Lanza varios procesos en paralelo. <code>join</code> espera a que todos terminen (con lazos <code>forever</code>, nunca terminan; los detiene el fin de la <code>run_phase</code>).</p>
+<h3>Semáforos</h3>
+<p><code>semaphore sema4 = new(1);</code> crea un semáforo con 1 llave. <code>get()</code> toma la llave (bloquea si no hay), <code>put()</code> la devuelve. En el monitor del switch garantiza que solo un hilo a la vez esté capturando la parte de “entrada” de una transacción.</p>
+<h3>Clases y handles</h3>
+<p><code>switch_item item = new;</code> crea un objeto nuevo. Es importante crear un objeto <em>nuevo por cada transacción</em> en el monitor: si se reutilizara el mismo, el scoreboard podría recibir un handle cuyo contenido cambia después.</p>
+</section>
+
+<!-- ================================================================= -->
+<section id="p1">
+<h2><span class="tag l">Parte 1</span>P1. Preparar el directorio de trabajo</h2>
+<pre class="term">mkdir -p uvm_lab/switch
+cd uvm_lab/switch
+<span class="c"># Verifique que VCS está disponible</span>
+which vcs
+vcs -ID</pre>
+<p>Cree en este directorio cada archivo de los pasos siguientes (o descárguelos con el botón <em>Descargar</em> de cada bloque).</p>
+</section>
+
+<section id="p2">
+<h2><span class="tag l">Parte 1</span>P2. El DUT: un switch sencillo</h2>
+<p>El switch recibe un paquete (<code>addr</code>, <code>data</code>) cuando <code>vld = 1</code> y lo envía, un ciclo después, a uno de dos puertos:</p>
+<ul>
+  <li><strong>Puerto A</strong> (<code>addr_a</code>, <code>data_a</code>) si <code>0 ≤ addr ≤ ADDR_DIV</code> (0x3F por defecto). El puerto B se pone en 0.</li>
+  <li><strong>Puerto B</strong> (<code>addr_b</code>, <code>data_b</code>) en caso contrario. El puerto A se pone en 0.</li>
+  <li>Con <code>rstn = 0</code> (reset activo en bajo, síncrono) todas las salidas van a 0. Si <code>vld = 0</code> las salidas mantienen su valor.</li>
+</ul>
+<div class="code"><div class="code-head"><span class="fname">switch/switch.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="switch.sv">Descargar</button></span></div><pre><code class="language-verilog">// =====================================================================
+// DUT: switch sencillo (tomado de la presentación)
+// Si la dirección está en [0 : ADDR_DIV] el paquete sale por el puerto A,
+// en caso contrario sale por el puerto B. Latencia: 1 ciclo de reloj.
+// =====================================================================
+module switch
+  # (parameter ADDR_WIDTH = 8,
+     parameter DATA_WIDTH = 16,
+     parameter ADDR_DIV   = 8&#x27;h3F
+    )
+  ( input                         clk,
+    input                         rstn,
+    input                         vld,
+
+    input      [ADDR_WIDTH-1:0]   addr,
+    input      [DATA_WIDTH-1:0]   data,
+
+    output reg [ADDR_WIDTH-1:0]   addr_a,
+    output reg [DATA_WIDTH-1:0]   data_a,
+
+    output reg [ADDR_WIDTH-1:0]   addr_b,
+    output reg [DATA_WIDTH-1:0]   data_b
+  );
+
+  always @ (posedge clk) begin
+    if (!rstn) begin
+      addr_a &lt;= 0;
+      data_a &lt;= 0;
+      addr_b &lt;= 0;
+      data_b &lt;= 0;
+    end else begin
+      if (vld) begin
+        if (addr &gt;= 0 &amp; addr &lt;= ADDR_DIV) begin
+          addr_a &lt;= addr;
+          data_a &lt;= data;
+          addr_b &lt;= 0;
+          data_b &lt;= 0;
+        end else begin
+          addr_a &lt;= 0;
+          data_a &lt;= 0;
+          addr_b &lt;= addr;
+          data_b &lt;= data;
+        end
+      end
+    end
+  end
+endmodule
+</code></pre></div>
+<div class="box q"><strong>Pregunta</strong>
+¿Qué latencia tiene el DUT? ¿Qué valor espera en <code>addr_b</code> si se envía <code>addr = 0x40</code>? ¿Y en <code>addr_a</code>?</div>
+</section>
+
+<section id="p3">
+<h2><span class="tag l">Parte 1</span>P3. La interfaz</h2>
+<p>La presentación no muestra la interfaz, pero es indispensable. Contiene todas las señales del DUT excepto el reloj, que entra como puerto para que la interfaz y el DUT compartan el mismo reloj. Se usan señales <code>logic</code> porque el driver las maneja desde código procedural (una clase).</p>
+<div class="code"><div class="code-head"><span class="fname">switch/switch_if.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="switch_if.sv">Descargar</button></span></div><pre><code class="language-verilog">// =====================================================================
+// Interfaz: agrupa todas las señales entre el testbench y el DUT.
+// No aparece en la presentación, pero es obligatoria para compilar.
+// =====================================================================
+interface switch_if (input bit clk);
+  logic        rstn;
+  logic        vld;
+  logic [7:0]  addr;
+  logic [15:0] data;
+
+  logic [7:0]  addr_a;
+  logic [15:0] data_a;
+  logic [7:0]  addr_b;
+  logic [15:0] data_b;
+endinterface
+</code></pre></div>
+<div class="box note"><strong>Para profundizar</strong>
+En ambientes más grandes se añaden <code>clocking blocks</code> y <code>modport</code> para definir con precisión cuándo se muestrean y manejan las señales. Aquí se omiten para mantener el código igual al de la presentación.</div>
+</section>
+
+<section id="p4">
+<h2><span class="tag l">Parte 1</span>P4. El sequence item (transacción)</h2>
+<p>Representa un paquete completo: lo que se envía (<code>addr</code>, <code>data</code>, aleatorios) y lo que el DUT devuelve en sus dos puertos (llenados por el monitor). Las macros de campo generan <code>print()</code>, que usaremos en la secuencia y el monitor.</p>
+<div class="code"><div class="code-head"><span class="fname">switch/switch_item.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="switch_item.sv">Descargar</button></span></div><pre><code class="language-verilog">// This is the base transaction object that will be used
+// in the environment to initiate new transactions and
+// capture transactions at DUT interface
+class switch_item extends uvm_sequence_item;
+  rand bit [7:0]   addr;     // estímulo (aleatorio)
+  rand bit [15:0]  data;     // estímulo (aleatorio)
+  bit [7:0]        addr_a;   // respuesta observada en el puerto A
+  bit [15:0]       data_a;
+  bit [7:0]        addr_b;   // respuesta observada en el puerto B
+  bit [15:0]       data_b;
+
+  // Use utility macros to implement standard functions
+  // like print, copy, clone, etc
+  `uvm_object_utils_begin(switch_item)
+    `uvm_field_int (addr,   UVM_DEFAULT)
+    `uvm_field_int (data,   UVM_DEFAULT)
+    `uvm_field_int (addr_a, UVM_DEFAULT)
+    `uvm_field_int (data_a, UVM_DEFAULT)
+    `uvm_field_int (addr_b, UVM_DEFAULT)
+    `uvm_field_int (data_b, UVM_DEFAULT)
+  `uvm_object_utils_end
+
+  function new(string name = &quot;switch_item&quot;);
+    super.new(name);
+  endfunction
+endclass
+</code></pre></div>
+<div class="box q"><strong>Pregunta</strong>
+¿Por qué <code>addr_a</code>, <code>data_a</code>, <code>addr_b</code> y <code>data_b</code> no son <code>rand</code>? ¿Qué pasaría si lo fueran?</div>
+</section>
+
+<section id="p5">
+<h2><span class="tag l">Parte 1</span>P5. La secuencia</h2>
+<p>Genera entre 2 y 5 transacciones aleatorias (variable <code>num</code>). Cada iteración sigue el handshake de la sección T8: <code>create → start_item → randomize → finish_item</code>.</p>
+<div class="code"><div class="code-head"><span class="fname">switch/gen_item_seq.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="gen_item_seq.sv">Descargar</button></span></div><pre><code class="language-verilog">// Secuencia: genera &#x27;num&#x27; transacciones aleatorias de tipo switch_item.
+// Nota: en la presentación se escribe &quot;extends uvm_sequence;&quot; (sin parámetro).
+// Parametrizarla con #(switch_item) es la práctica recomendada: así REQ/RSP
+// quedan tipados correctamente.
+class gen_item_seq extends uvm_sequence #(switch_item);
+  `uvm_object_utils(gen_item_seq)
+  function new(string name=&quot;gen_item_seq&quot;);
+    super.new(name);
+  endfunction
+
+  rand int num;     // Config total number of items to be sent
+
+  constraint c1 { num inside {[2:5]}; }
+
+  virtual task body();
+    for (int i = 0; i &lt; num; i ++) begin
+      switch_item m_item = switch_item::type_id::create(&quot;m_item&quot;);
+      start_item(m_item);
+      if (!m_item.randomize())
+        `uvm_error(&quot;SEQ&quot;, &quot;Fallo al aleatorizar m_item&quot;)
+      `uvm_info(&quot;SEQ&quot;, $sformatf(&quot;Generate new item: &quot;), UVM_LOW)
+      m_item.print();
+      finish_item(m_item);
+    end
+    `uvm_info(&quot;SEQ&quot;, $sformatf(&quot;Done generation of %0d items&quot;, num), UVM_LOW)
+  endtask
+endclass
+</code></pre></div>
+<div class="box note"><strong>Diferencia con la presentación</strong>
+Se parametrizó como <code>uvm_sequence #(switch_item)</code> y se verifica el retorno de <code>randomize()</code>. El comportamiento es el mismo.</div>
+</section>
+
+<section id="p6">
+<h2><span class="tag l">Parte 1</span>P6. El driver</h2>
+<p>El driver extiende <code>uvm_driver #(switch_item)</code>, que ya incluye el puerto <code>seq_item_port</code>. Su trabajo:</p>
+<ol>
+  <li><strong>build_phase:</strong> obtener la interfaz virtual de <code>uvm_config_db</code>.</li>
+  <li><strong>run_phase:</strong> en un lazo infinito, pedir un item, manejarlo sobre los pines y avisar que terminó.</li>
+  <li><strong>drive_item:</strong> poner <code>vld = 1</code> con <code>addr</code>/<code>data</code>, esperar un flanco (el DUT captura el dato) y bajar <code>vld</code>.</li>
+</ol>
+<div class="code"><div class="code-head"><span class="fname">switch/driver.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="driver.sv">Descargar</button></span></div><pre><code class="language-verilog">// Driver: recibe transacciones del sequencer y las convierte en
+// actividad a nivel de pines sobre la interfaz virtual.
+class driver extends uvm_driver #(switch_item);
+  `uvm_component_utils(driver)
+  function new(string name = &quot;driver&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  virtual switch_if vif;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    if (!uvm_config_db#(virtual switch_if)::get(this, &quot;&quot;, &quot;switch_vif&quot;, vif))
+      `uvm_fatal(&quot;DRV&quot;, &quot;Could not get vif&quot;)
+  endfunction
+
+  virtual task run_phase(uvm_phase phase);
+    super.run_phase(phase);
+    vif.vld &lt;= 0;   // (añadido) valor inicial conocido en lugar de X
+    forever begin
+      switch_item m_item;
+      `uvm_info(&quot;DRV&quot;, $sformatf(&quot;Wait for item from sequencer&quot;), UVM_LOW)
+      seq_item_port.get_next_item(m_item);
+      drive_item(m_item);
+      seq_item_port.item_done();
+    end
+  endtask
+
+  virtual task drive_item(switch_item m_item);
+    vif.vld  &lt;= 1;
+    vif.addr &lt;= m_item.addr;
+    vif.data &lt;= m_item.data;
+
+    @ (posedge vif.clk);
+    vif.vld  &lt;= 0;
+  endtask
+endclass
+</code></pre></div>
+<figure>
+<svg viewBox="0 0 720 230" width="100%" style="max-width:720px" role="img" aria-label="Diagrama de tiempos del switch">
+  <g font-size="12" fill="#5b6475">
+    <text x="10" y="32">clk</text><text x="10" y="72">vld</text><text x="10" y="112">addr/data</text><text x="10" y="152">addr_a/data_a</text><text x="10" y="192">monitor</text>
+  </g>
+  <path d="M110,40 h40 v-20 h40 v20 h40 v-20 h40 v20 h40 v-20 h40 v20 h40 v-20 h40 v20 h40 v-20 h40 v20 h40 v-20 h40 v20 h30" fill="none" stroke="#0b6e99" stroke-width="2"/>
+  <path d="M110,80 h100 v-20 h160 v20 h300" fill="none" stroke="#2e7d32" stroke-width="2"/>
+  <g stroke="#6b3fa0" fill="none" stroke-width="1.5">
+    <path d="M110,110 h95 l5,-10 l5,10 l-5,10 l-5,-10"/><path d="M215,100 h75 l5,10 l-5,10 h-75"/><text x="235" y="114" font-size="11" fill="#6b3fa0" stroke="none">0x12</text>
+    <path d="M295,110 l5,-10 h65 l5,10 l-5,10 h-65 z"/><text x="318" y="114" font-size="11" fill="#6b3fa0" stroke="none">0x50</text>
+  </g>
+  <g stroke="#d48806" fill="none" stroke-width="1.5">
+    <path d="M110,150 h175 l5,-10 h75 l5,10 l-5,10 h-75 l-5,-10"/><text x="300" y="154" font-size="11" fill="#d48806" stroke="none">0x12</text>
+    <path d="M370,150 h300"/><text x="420" y="154" font-size="11" fill="#d48806" stroke="none">0 (0x50 va al puerto B)</text>
+  </g>
+  <g stroke="#b3263e" stroke-dasharray="3 3"><line x1="230" y1="10" x2="230" y2="210"/><line x1="310" y1="10" x2="310" y2="210"/><line x1="390" y1="10" x2="390" y2="210"/></g>
+  <g font-size="10.5" fill="#b3263e">
+    <text x="196" y="205">entrada #1</text><text x="282" y="205">salida #1 /</text><text x="282" y="217">entrada #2</text><text x="368" y="205">salida #2</text>
+  </g>
+</svg>
+<figcaption>Figura 3. Dos transacciones consecutivas: el DUT captura en un flanco y presenta la salida en el siguiente; el monitor muestrea entrada y salida en flancos consecutivos.</figcaption>
+</figure>
+<div class="box q"><strong>Pregunta</strong>
+Si la secuencia envía transacciones sin pausa, ¿cuántos ciclos dura cada una sobre la interfaz? Justifique con la sección T12.</div>
+</section>
+
+<section id="p7">
+<h2><span class="tag l">Parte 1</span>P7. El monitor</h2>
+<p>El monitor es <strong>pasivo</strong>: nunca maneja señales. En cada flanco, si <code>rstn</code> y <code>vld</code> están en 1, captura <code>addr</code>/<code>data</code> (primera parte), espera un flanco más y captura las salidas (segunda parte). Luego envía el item completo por <code>mon_analysis_port</code>.</p>
+<p><strong>¿Por qué dos hilos?</strong> Mientras el hilo 0 espera la salida de la transacción N (segundo flanco), en ese mismo flanco puede aparecer la entrada de la transacción N+1. Un único hilo la perdería. Con dos hilos y el semáforo, un hilo atiende la transacción N y el otro la N+1, de forma alternada (pipeline de 2 etapas).</p>
+<div class="code"><div class="code-head"><span class="fname">switch/monitor.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="monitor.sv">Descargar</button></span></div><pre><code class="language-verilog">// Monitor: observa pasivamente la interfaz, reconstruye transacciones
+// completas (entrada + salida) y las publica por un analysis port.
+class monitor extends uvm_monitor;
+  `uvm_component_utils(monitor)
+  function new(string name=&quot;monitor&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  uvm_analysis_port #(switch_item) mon_analysis_port;
+  virtual switch_if vif;
+  semaphore sema4;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    if (!uvm_config_db#(virtual switch_if)::get(this, &quot;&quot;, &quot;switch_vif&quot;, vif))
+      `uvm_fatal(&quot;MON&quot;, &quot;Could not get vif&quot;)
+    sema4 = new(1);
+    mon_analysis_port = new (&quot;mon_analysis_port&quot;, this);
+  endfunction
+
+  virtual task run_phase(uvm_phase phase);
+    super.run_phase(phase);
+    // Dos hilos en paralelo: mientras uno espera la salida de la
+    // transacción N, el otro ya puede capturar la entrada de la N+1.
+    fork
+      sample_port(&quot;Thread0&quot;);
+      sample_port(&quot;Thread1&quot;);
+    join
+  endtask
+
+  virtual task sample_port(string tag=&quot;&quot;);
+    // This task monitors the interface for a complete
+    // transaction and pushes into the mailbox when the
+    // transaction is complete
+    forever begin
+      @(posedge vif.clk);
+      if (vif.rstn &amp; vif.vld) begin
+        switch_item item = new;
+        sema4.get();
+        item.addr = vif.addr;
+        item.data = vif.data;
+        `uvm_info(&quot;MON&quot;, $sformatf(&quot;T=%0t [Monitor] %s First part over&quot;,
+                                   $time, tag), UVM_LOW)
+        @(posedge vif.clk);
+        sema4.put();
+        item.addr_a = vif.addr_a;
+        item.data_a = vif.data_a;
+        item.addr_b = vif.addr_b;
+        item.data_b = vif.data_b;
+        mon_analysis_port.write(item);
+        `uvm_info(&quot;MON&quot;, $sformatf(&quot;T=%0t [Monitor] %s Second part over, item:&quot;,
+                                   $time, tag), UVM_LOW)
+        item.print();
+      end
+    end
+  endtask
+endclass
+</code></pre></div>
+<div class="box ex"><strong>Ejercicio 7.1</strong>
+Comente la línea <code>sample_port("Thread1");</code>, recompile y compare el número de transacciones que recibe el scoreboard contra las generadas por la secuencia. Explique la diferencia.</div>
+</section>
+
+<section id="p8">
+<h2><span class="tag l">Parte 1</span>P8. El agente</h2>
+<p>Crea sequencer, driver y monitor en <code>build_phase</code> (pasando <code>this</code> como padre) y conecta el driver al sequencer en <code>connect_phase</code>. Note que el sequencer no necesita clase propia: se usa directamente <code>uvm_sequencer #(switch_item)</code>.</p>
+<div class="code"><div class="code-head"><span class="fname">switch/agent.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="agent.sv">Descargar</button></span></div><pre><code class="language-verilog">// Agente: encapsula sequencer + driver + monitor de una interfaz.
+class agent extends uvm_agent;
+  `uvm_component_utils(agent)
+  function new(string name=&quot;agent&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  driver                     d0;   // Driver handle
+  monitor                    m0;   // Monitor handle
+  uvm_sequencer #(switch_item) s0; // Sequencer Handle
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    s0 = uvm_sequencer#(switch_item)::type_id::create(&quot;s0&quot;, this);
+    d0 = driver::type_id::create(&quot;d0&quot;, this);
+    m0 = monitor::type_id::create(&quot;m0&quot;, this);
+  endfunction
+
+  virtual function void connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
+    d0.seq_item_port.connect(s0.seq_item_export);
+  endfunction
+endclass
+</code></pre></div>
+<div class="box note"><strong>Agentes activos y pasivos</strong>
+Un agente puede ser <code>UVM_ACTIVE</code> (con driver y sequencer) o <code>UVM_PASSIVE</code> (solo monitor), según el campo <code>is_active</code>. Este ejemplo siempre crea los tres componentes; en el ejercicio 16.5 se propone hacerlo configurable.</div>
+</section>
+
+<section id="p9">
+<h2><span class="tag l">Parte 1</span>P9. El scoreboard</h2>
+<p>Implementa <code>write()</code>, que se ejecuta cada vez que el monitor publica un item. Contiene el <em>modelo de referencia</em> del switch: si <code>addr ≤ 0x3F</code>, la transacción debe aparecer igual en el puerto A; si no, en el puerto B. Si no coincide, reporta <code>`uvm_error</code>.</p>
+<div class="code"><div class="code-head"><span class="fname">switch/scoreboard.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="scoreboard.sv">Descargar</button></span></div><pre><code class="language-verilog">// Scoreboard: compara lo observado contra el comportamiento esperado.
+class scoreboard extends uvm_scoreboard;
+  `uvm_component_utils(scoreboard)
+  function new(string name=&quot;scoreboard&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  uvm_analysis_imp #(switch_item, scoreboard) m_analysis_imp;
+
+  int unsigned n_pass;   // (añadido) contadores para el resumen final
+  int unsigned n_fail;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    m_analysis_imp = new(&quot;m_analysis_imp&quot;, this);
+  endfunction
+
+  // OJO: la presentación declara &quot;virtual function write(...)&quot; sin tipo de
+  // retorno (implícitamente devuelve 1 bit). Debe ser &quot;function void&quot;.
+  virtual function void write(switch_item item);
+    if (item.addr inside {[0:&#x27;h3f]}) begin
+      if (item.addr_a != item.addr | item.data_a != item.data) begin
+        `uvm_error(&quot;SCBD&quot;, $sformatf(&quot;ERROR! Mismatch addr=0x%0h data=0x%0h addr_a=0x%0h data_a=0x%0h&quot;,
+                   item.addr, item.data, item.addr_a, item.data_a))
+        n_fail++;
+      end else begin
+        `uvm_info(&quot;SCBD&quot;, $sformatf(&quot;PASS! Match addr=0x%0h data=0x%0h addr_a=0x%0h data_a=0x%0h&quot;,
+                  item.addr, item.data, item.addr_a, item.data_a), UVM_LOW)
+        n_pass++;
+      end
+    end else begin
+      if (item.addr_b != item.addr | item.data_b != item.data) begin
+        `uvm_error(&quot;SCBD&quot;, $sformatf(&quot;ERROR! Mismatch addr=0x%0h data=0x%0h addr_b=0x%0h data_b=0x%0h&quot;,
+                   item.addr, item.data, item.addr_b, item.data_b))
+        n_fail++;
+      end else begin
+        `uvm_info(&quot;SCBD&quot;, $sformatf(&quot;PASS! Match addr=0x%0h data=0x%0h addr_b=0x%0h data_b=0x%0h&quot;,
+                  item.addr, item.data, item.addr_b, item.data_b), UVM_LOW)
+        n_pass++;
+      end
+    end
+  endfunction
+
+  // (añadido) Resumen al final de la simulación
+  virtual function void report_phase(uvm_phase phase);
+    super.report_phase(phase);
+    `uvm_info(&quot;SCBD&quot;, $sformatf(&quot;Resumen: %0d PASS, %0d FAIL&quot;, n_pass, n_fail), UVM_NONE)
+  endfunction
+endclass
+</code></pre></div>
+<div class="box warn"><strong>Corrección importante respecto a la presentación</strong>
+En la presentación la función se declara como <code>virtual function write(switch_item item);</code>. Sin tipo de retorno, SystemVerilog asume que devuelve un valor de 1 bit, lo cual no coincide con la firma <code>function void write(...)</code> que espera <code>uvm_analysis_imp</code>. Debe declararse como <code>virtual function void write(...)</code>.</div>
+<p>Además se añadieron dos contadores y un <code>report_phase</code> que imprime el resumen <em>PASS/FAIL</em> al final.</p>
+</section>
+
+<section id="p10">
+<h2><span class="tag l">Parte 1</span>P10. El ambiente</h2>
+<p>Crea el agente y el scoreboard y conecta el analysis port del monitor (<code>a0.m0.mon_analysis_port</code>) con el imp del scoreboard. El ambiente es la unidad que se reutiliza: otro test puede usar el mismo <code>env</code> con secuencias distintas.</p>
+<div class="code"><div class="code-head"><span class="fname">switch/env.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="env.sv">Descargar</button></span></div><pre><code class="language-verilog">// Ambiente: contiene el agente y el scoreboard y los conecta.
+class env extends uvm_env;
+  `uvm_component_utils(env)
+  function new(string name=&quot;env&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  agent       a0;    // Agent handle
+  scoreboard  sb0;   // Scoreboard handle
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    a0  = agent::type_id::create(&quot;a0&quot;, this);
+    sb0 = scoreboard::type_id::create(&quot;sb0&quot;, this);
+  endfunction
+
+  virtual function void connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
+    a0.m0.mon_analysis_port.connect(sb0.m_analysis_imp);
+  endfunction
+endclass
+</code></pre></div>
+</section>
+
+<section id="p11">
+<h2><span class="tag l">Parte 1</span>P11. El test</h2>
+<p>El test es la raíz del árbol de componentes. En <code>build_phase</code> crea el ambiente, obtiene la interfaz del <code>tb_top</code> y la redistribuye hacia el agente. En <code>run_phase</code>:</p>
+<ol>
+  <li>Levanta una objeción.</li>
+  <li>Aplica reset (5 ciclos en 0, luego 10 ciclos de espera).</li>
+  <li>Aleatoriza la secuencia (elige <code>num</code>) y la arranca sobre el sequencer <code>e0.a0.s0</code>. <code>start()</code> bloquea hasta que <code>body()</code> termina.</li>
+  <li>Espera unos ciclos para que la última transacción llegue al scoreboard y baja la objeción.</li>
+</ol>
+<div class="code"><div class="code-head"><span class="fname">switch/test.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="test.sv">Descargar</button></span></div><pre><code class="language-verilog">// Test: construye el ambiente, configura, aplica reset y arranca la secuencia.
+class test extends uvm_test;
+  `uvm_component_utils(test)
+  function new(string name = &quot;test&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  env e0;
+  virtual switch_if vif;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    e0 = env::type_id::create(&quot;e0&quot;, this);
+    if (!uvm_config_db#(virtual switch_if)::get(this, &quot;&quot;, &quot;switch_vif&quot;, vif))
+      `uvm_fatal(&quot;TEST&quot;, &quot;Did not get vif&quot;)
+
+    uvm_config_db#(virtual switch_if)::set(this, &quot;e0.a0.*&quot;, &quot;switch_vif&quot;, vif);
+  endfunction
+
+  // (añadido) Imprime la jerarquía de componentes construida
+  virtual function void end_of_elaboration_phase(uvm_phase phase);
+    super.end_of_elaboration_phase(phase);
+    uvm_root::get().print_topology();
+  endfunction
+
+  virtual task run_phase(uvm_phase phase);
+    gen_item_seq seq = gen_item_seq::type_id::create(&quot;seq&quot;);
+    phase.raise_objection(this);
+    apply_reset();
+
+    if (!seq.randomize())
+      `uvm_fatal(&quot;TEST&quot;, &quot;Fallo al aleatorizar la secuencia&quot;)
+    seq.start(e0.a0.s0);
+    // (añadido) Unos ciclos extra para que el monitor capture la
+    // salida de la última transacción antes de terminar la simulación.
+    repeat (5) @(posedge vif.clk);
+    phase.drop_objection(this);
+  endtask
+
+  virtual task apply_reset();
+    vif.rstn &lt;= 0;
+    repeat(5)  @ (posedge vif.clk);
+    vif.rstn &lt;= 1;
+    repeat(10) @ (posedge vif.clk);
+  endtask
+endclass
+</code></pre></div>
+</section>
+
+<section id="p12">
+<h2><span class="tag l">Parte 1</span>P12. El módulo superior (<code>tb_top</code>)</h2>
+<p>Tampoco aparece en la presentación. Es el único <code>module</code> del testbench y hace cuatro cosas: genera el reloj, instancia la interfaz, instancia el DUT conectándolo a la interfaz, y en un bloque <code>initial</code> publica la interfaz en <code>uvm_config_db</code> y llama a <code>run_test()</code>.</p>
+<div class="code"><div class="code-head"><span class="fname">switch/tb_top.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="tb_top.sv">Descargar</button></span></div><pre><code class="language-verilog">// Módulo superior: reloj, interfaz, DUT y arranque de UVM.
+`include &quot;uvm_macros.svh&quot;
+
+module tb_top;
+  import uvm_pkg::*;
+  import switch_pkg::*;
+
+  bit clk;
+  always #10 clk = ~clk;          // periodo de 20 ns
+
+  switch_if _if (clk);
+
+  switch u0 ( .clk    (clk),
+              .rstn   (_if.rstn),
+              .vld    (_if.vld),
+              .addr   (_if.addr),
+              .data   (_if.data),
+              .addr_a (_if.addr_a),
+              .data_a (_if.data_a),
+              .addr_b (_if.addr_b),
+              .data_b (_if.data_b));
+
+  initial begin
+    // Publica la interfaz para el test (instancia &quot;uvm_test_top&quot;)
+    uvm_config_db#(virtual switch_if)::set(null, &quot;uvm_test_top&quot;, &quot;switch_vif&quot;, _if);
+    run_test(&quot;test&quot;);
+  end
+
+  // Formas de onda opcionales: ./simv ... +VCD
+  initial begin
+    if ($test$plusargs(&quot;VCD&quot;)) begin
+      $dumpfile(&quot;switch.vcd&quot;);
+      $dumpvars(0, tb_top);
+    end
+  end
+endmodule
+</code></pre></div>
+<div class="box q"><strong>Pregunta</strong>
+¿Por qué el primer argumento del <code>set</code> es <code>null</code> y el segundo <code>"uvm_test_top"</code>? (Pista: <code>tb_top</code> es un módulo, no un componente UVM.)</div>
+</section>
+
+<section id="p13">
+<h2><span class="tag l">Parte 1</span>P13. El paquete y la lista de archivos</h2>
+<p>Las clases se agrupan en un <code>package</code> que importa <code>uvm_pkg</code> e incluye los archivos <em>en orden de dependencia</em>: una clase debe declararse antes de usarse (el item antes que la secuencia y el driver; el driver y el monitor antes que el agente, etc.).</p>
+<div class="code"><div class="code-head"><span class="fname">switch/switch_pkg.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="switch_pkg.sv">Descargar</button></span></div><pre><code class="language-verilog">// Paquete: reúne todas las clases del testbench en un solo espacio de nombres.
+package switch_pkg;
+  import uvm_pkg::*;
+  `include &quot;uvm_macros.svh&quot;
+
+  `include &quot;switch_item.sv&quot;
+  `include &quot;gen_item_seq.sv&quot;
+  `include &quot;driver.sv&quot;
+  `include &quot;monitor.sv&quot;
+  `include &quot;agent.sv&quot;
+  `include &quot;scoreboard.sv&quot;
+  `include &quot;env.sv&quot;
+  `include &quot;test.sv&quot;
+endpackage
+</code></pre></div>
+<p>La lista de archivos indica a VCS qué compilar y en qué orden. La interfaz va primero porque las clases del paquete usan <code>virtual switch_if</code>. <code>+incdir+.</code> permite que los <code>`include</code> encuentren los archivos.</p>
+<div class="code"><div class="code-head"><span class="fname">switch/files.f</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="files.f">Descargar</button></span></div><pre><code class="language-plaintext">+incdir+.
+switch_if.sv
+switch.sv
+switch_pkg.sv
+tb_top.sv
+</code></pre></div>
+</section>
+
+<section id="p14">
+<h2><span class="tag l">Parte 1</span>P14. Compilar y simular con VCS</h2>
+<p>VCS trabaja en dos pasos: <strong>compilación/elaboración</strong> (genera el ejecutable <code>simv</code>) y <strong>simulación</strong> (ejecuta <code>simv</code>).</p>
+<h3>Opción A: comandos directos</h3>
+<pre class="term"><span class="c"># 1) Compilar</span>
+vcs -full64 -sverilog -ntb_opts uvm-1.2 -timescale=1ns/1ps \
+    -debug_access+all -f files.f -l comp.log
+
+<span class="c"># 2) Simular</span>
+./simv +UVM_TESTNAME=test +UVM_VERBOSITY=UVM_LOW +ntb_random_seed=1 -l sim.log</pre>
+
+<table>
+<tr><th>Opción</th><th>Significado</th></tr>
+<tr><td><code>-full64</code></td><td>Compilación de 64 bits.</td></tr>
+<tr><td><code>-sverilog</code></td><td>Habilita SystemVerilog.</td></tr>
+<tr><td><code>-ntb_opts uvm-1.2</code></td><td>Compila y enlaza la biblioteca UVM 1.2 incluida en VCS (también agrega la ruta de <code>uvm_macros.svh</code>).</td></tr>
+<tr><td><code>-timescale=1ns/1ps</code></td><td>Unidad/precisión de tiempo para archivos sin <code>`timescale</code> (necesario para <code>#10</code> y <code>#200</code>).</td></tr>
+<tr><td><code>-debug_access+all</code></td><td>Habilita visibilidad para depuración y formas de onda (puede omitirse para simular más rápido).</td></tr>
+<tr><td><code>-f files.f</code></td><td>Lee la lista de archivos.</td></tr>
+<tr><td><code>-l archivo.log</code></td><td>Guarda la salida en un log.</td></tr>
+<tr><td><code>+UVM_TESTNAME=test</code></td><td>Nombre de la clase de test a ejecutar.</td></tr>
+<tr><td><code>+UVM_VERBOSITY=UVM_LOW</code></td><td>Nivel de detalle de los mensajes.</td></tr>
+<tr><td><code>+ntb_random_seed=N</code></td><td>Semilla de aleatorización.</td></tr>
+</table>
+
+<h3>Opción B: Makefile</h3>
+<div class="code"><div class="code-head"><span class="fname">switch/Makefile</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="Makefile">Descargar</button></span></div><pre><code class="language-makefile"># Makefile para VCS + UVM
+# Uso: make            -&gt; compila y simula
+#      make SEED=7     -&gt; otra semilla
+#      make VERB=UVM_HIGH
+#      make waves      -&gt; genera archivo VCD
+
+TEST  ?= test
+VERB  ?= UVM_LOW
+SEED  ?= 1
+UVM   ?= uvm-1.2
+
+VCS_OPTS = -full64 -sverilog -ntb_opts $(UVM) -timescale=1ns/1ps \
+           -debug_access+all -f files.f -l comp.log
+SIM_OPTS = +UVM_TESTNAME=$(TEST) +UVM_VERBOSITY=$(VERB) \
+           +ntb_random_seed=$(SEED) -l sim.log
+
+all: comp sim
+
+comp:
+	vcs $(VCS_OPTS)
+
+sim:
+	./simv $(SIM_OPTS)
+
+waves:
+	./simv $(SIM_OPTS) +VCD
+
+clean:
+	rm -rf simv simv.daidir csrc *.log *.vcd ucli.key vc_hdrs.h \
+	       DVEfiles verdiLog novas.* *.fsdb AN.DB
+
+.PHONY: all comp sim waves clean
+</code></pre></div>
+<pre class="term">make              <span class="c"># compila y simula</span>
+make sim SEED=42  <span class="c"># vuelve a simular con otra semilla (sin recompilar)</span>
+make waves        <span class="c"># simula y genera switch.vcd</span>
+make clean</pre>
+
+<h3>Opción C: script</h3>
+<div class="code"><div class="code-head"><span class="fname">switch/run.sh</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="run.sh">Descargar</button></span></div><pre><code class="language-bash">#!/bin/bash
+# Script alternativo al Makefile
+# Uso: ./run.sh [semilla]
+SEED=${1:-1}
+
+vcs -full64 -sverilog -ntb_opts uvm-1.2 -timescale=1ns/1ps \
+    -debug_access+all -f files.f -l comp.log || exit 1
+
+./simv +UVM_TESTNAME=test +UVM_VERBOSITY=UVM_LOW \
+       +ntb_random_seed=$SEED -l sim.log
+</code></pre></div>
+<div class="box note"><strong>Versión de UVM</strong>
+Si su instalación de VCS no tiene UVM 1.2, use <code>make UVM=uvm</code> (UVM 1.1d) o <code>make UVM=uvm-ieee</code>. El código de este laboratorio es compatible con ambas.</div>
+</section>
+
+<section id="p15">
+<h2><span class="tag l">Parte 1</span>P15. Analizar los resultados</h2>
+<p>Abra <code>sim.log</code>. Encontrará, en orden:</p>
+<ol>
+  <li><strong>Inicio:</strong> <code>UVM_INFO @ 0: reporter [RNTST] Running test test...</code></li>
+  <li><strong>Topología</strong> (impresa en <code>end_of_elaboration_phase</code>): un árbol con <code>uvm_test_top</code>, <code>e0</code>, <code>a0</code>, <code>d0</code>, <code>m0</code>, <code>s0</code> y <code>sb0</code>. Compruebe que todos los componentes existen.</li>
+  <li><strong>Tráfico:</strong> mensajes <code>[SEQ]</code> con el item generado, <code>[DRV]</code>, <code>[MON]</code> con “First/Second part over” y <code>[SCBD]</code> con <code>PASS!</code> o <code>ERROR!</code>.</li>
+  <li><strong>Resumen del scoreboard:</strong> <code>[SCBD] Resumen: N PASS, 0 FAIL</code>.</li>
+  <li><strong>UVM Report Summary:</strong> conteo de mensajes por severidad.</li>
+</ol>
+<p>Forma aproximada del final del log (los valores dependen de la semilla):</p>
+<pre class="term">UVM_INFO scoreboard.sv(...) @ ...: uvm_test_top.e0.sb0 [SCBD] PASS! Match addr=0x2a data=0x...
+...
+UVM_INFO scoreboard.sv(...) @ ...: uvm_test_top.e0.sb0 [SCBD] Resumen: 4 PASS, 0 FAIL
+
+--- UVM Report Summary ---
+** Report counts by severity
+UVM_INFO :   ...
+UVM_WARNING :    0
+UVM_ERROR :    0
+UVM_FATAL :    0</pre>
+<p>Comandos útiles:</p>
+<pre class="term">grep -c "PASS!" sim.log          <span class="c"># número de comparaciones correctas</span>
+grep "UVM_ERROR" sim.log          <span class="c"># errores</span>
+grep "\[SEQ\] Done" sim.log       <span class="c"># cuántos items generó la secuencia</span></pre>
+<h3>Formas de onda</h3>
+<pre class="term">make waves                         <span class="c"># genera switch.vcd</span>
+<span class="c"># Con Verdi:</span>
+vcd2fsdb switch.vcd -o switch.fsdb && verdi -ssf switch.fsdb &amp;
+<span class="c"># O con DVE (versiones antiguas):</span>
+dve -vpd ...   <span class="c"># o abra el VCD con GTKWave</span></pre>
+<p>Ubique en las ondas las señales de la figura 3 y verifique la latencia de un ciclo.</p>
+<div class="box ex"><strong>Ejercicio 15.1</strong>
+Ejecute con tres semillas distintas (<code>make sim SEED=1</code>, <code>2</code>, <code>3</code>). ¿Cambia el número de transacciones? ¿Por qué? ¿Cuántas transacciones fueron al puerto A y cuántas al B?</div>
+</section>
+
+<section id="p16">
+<h2><span class="tag l">Parte 1</span>P16. Ejercicios</h2>
+<div class="box ex"><strong>16.1 Inyectar un error en el DUT</strong>
+En <code>switch.sv</code>, cambie <code>addr &lt;= ADDR_DIV</code> por <code>addr &lt; ADDR_DIV</code>. ¿El ambiente detecta el error? Probablemente no: con direcciones de 8 bits aleatorias, la probabilidad de generar exactamente 0x3F es baja. Añada en la secuencia una restricción que fuerce casos frontera, por ejemplo con <code>dist</code>:
+<pre class="term">constraint c_addr { m_item.addr dist { 8'h3F := 5, 8'h40 := 5, [0:8'hFF] :/ 10 }; }</pre>
+(pista: la restricción debe ir en <code>switch_item</code>, o aplicarse con <code>m_item.randomize() with {...}</code>).</div>
+<div class="box ex"><strong>16.2 Más tráfico</strong>
+Cambie la restricción de <code>num</code> a <code>soft</code> y, en el test, use <code>seq.randomize() with { num inside {[50:100]}; }</code>.</div>
+<div class="box ex"><strong>16.3 Un segundo test</strong>
+Cree <code>class test_puerto_b extends test;</code> que ejecute una secuencia que solo genere direcciones mayores a 0x3F. Regístrela con <code>`uvm_component_utils</code> y ejecútela con <code>make sim TEST=test_puerto_b</code> sin cambiar <code>tb_top</code>.</div>
+<div class="box ex"><strong>16.4 Override de fábrica</strong>
+Cree <code>driver_lento</code> que inserte un ciclo con <code>vld = 0</code> entre transacciones. En el <code>build_phase</code> de un nuevo test aplique <code>driver::type_id::set_type_override(driver_lento::get_type());</code> antes de crear el ambiente. ¿Sigue funcionando el monitor?</div>
+<div class="box ex"><strong>16.5 Agente pasivo</strong>
+Modifique el agente para crear el driver y el sequencer solo si <code>get_is_active() == UVM_ACTIVE</code>, y conéctelos solo en ese caso.</div>
+<div class="box ex"><strong>16.6 Cobertura funcional</strong>
+Cree un <code>uvm_subscriber #(switch_item)</code> con un <code>covergroup</code> que cubra: puerto destino (A/B), valores frontera de <code>addr</code> (0x00, 0x3F, 0x40, 0xFF). Conéctelo al mismo analysis port del monitor y compile con <code>-cm line+cond+fsm+tgl</code> para ver también cobertura de código.</div>
+</section>
+
+<!-- ================================================================= -->
+<section id="r1">
+<h2><span class="tag p2">Parte 2</span>R1. Segundo ejemplo: controlador de registros (<code>reg_ctrl</code>)</h2>
+<p>El segundo ejemplo de la presentación usa exactamente la misma arquitectura, pero con un DUT más interesante: una memoria de 256 registros de 16 bits con protocolo de lectura/escritura.</p>
+<table>
+<tr><th>Señal</th><th>Dirección</th><th>Función</th></tr>
+<tr><td><code>sel</code></td><td>entrada</td><td>Indica que hay una transacción válida.</td></tr>
+<tr><td><code>wr</code></td><td>entrada</td><td>1 = escritura, 0 = lectura.</td></tr>
+<tr><td><code>addr</code>, <code>wdata</code></td><td>entrada</td><td>Dirección y dato a escribir.</td></tr>
+<tr><td><code>rdata</code></td><td>salida</td><td>Dato leído (disponible un ciclo después de la lectura).</td></tr>
+<tr><td><code>ready</code></td><td>salida</td><td>Cuando es 0, el DUT no acepta transacciones (ocurre durante una lectura).</td></tr>
+</table>
+<p><strong>Protocolo:</strong> una escritura se completa en un ciclo. Una lectura entrega <code>rdata</code> en el ciclo siguiente y baja <code>ready</code>; mientras <code>ready = 0</code> no se puede iniciar otra transacción. Tras el reset, todos los registros valen <code>RESET_VAL = 0x1234</code>.</p>
+
+<h3>Conceptos nuevos de este ejemplo</h3>
+<ul>
+  <li><strong>Driver con control de flujo:</strong> después de presentar la transacción espera mientras <code>ready = 0</code> (<code>while (!vif.ready)</code>). Así el driver respeta el protocolo del DUT.</li>
+  <li><strong>Monitor que depende del tipo de transacción:</strong> para lecturas espera un ciclo adicional para capturar <code>rdata</code>. No necesita dos hilos (el semáforo quedó declarado pero no se usa).</li>
+  <li><strong>Scoreboard con modelo de referencia con estado:</strong> el arreglo <code>refq[`DEPTH]</code> recuerda la última escritura a cada dirección. Una lectura se compara contra esa escritura, o contra 0x1234 si nunca se escribió.</li>
+  <li><strong><code>convert2str()</code>:</strong> función propia del item para imprimir una transacción en una sola línea.</li>
+  <li><strong>Macros <code>`define</code></strong> (<code>`ADDR_WIDTH</code>, <code>`DATA_WIDTH</code>, <code>`DEPTH</code>) compartidas por DUT, interfaz y clases; las colocamos en <code>reg_defines.svh</code> con protección contra inclusión doble.</li>
+  <li><strong>Restricción <code>soft</code></strong> en la secuencia, sobrescrita por el test con <code>randomize() with {num inside {[20:30]};}</code>.</li>
+</ul>
+<div class="box q"><strong>Pregunta</strong>
+Dibuje el diagrama de tiempos de: escritura a 0x05, lectura de 0x05, escritura a 0x06. ¿En qué ciclos está <code>ready</code> en 0? ¿Cuántos ciclos espera el driver en el lazo <code>while</code>?</div>
+</section>
+
+<section id="r2">
+<h2><span class="tag p2">Parte 2</span>R2. Código completo del ambiente <code>reg_ctrl</code></h2>
+<p>Cree el directorio <code>uvm_lab/reg_ctrl</code>. Como las clases tienen los mismos nombres que en la Parte 1 (<code>driver</code>, <code>monitor</code>…), cada ejemplo se compila en su propio directorio y paquete.</p>
+<h3>Definiciones, DUT e interfaz</h3>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/reg_defines.svh</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="reg_defines.svh">Descargar</button></span></div><pre><code class="language-verilog">// Macros globales usadas por el DUT, la interfaz y las clases.
+`ifndef REG_DEFINES_SVH
+`define REG_DEFINES_SVH
+  `define ADDR_WIDTH 8
+  `define DATA_WIDTH 16
+  `define DEPTH      256
+`endif
+</code></pre></div>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/reg_ctrl.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="reg_ctrl.sv">Descargar</button></span></div><pre><code class="language-verilog">// Note that in this protocol, write data is provided
+// in a single clock along with the address while read
+// data is received on the next clock, and no transactions
+// can be started during that time indicated by &quot;ready&quot;
+// signal.
+
+module reg_ctrl
+  # (
+    parameter ADDR_WIDTH = 8,
+    parameter DATA_WIDTH = 16,
+    parameter DEPTH      = 256,
+    parameter RESET_VAL  = 16&#x27;h1234
+  )
+  ( input                       clk,
+    input                       rstn,
+    input      [ADDR_WIDTH-1:0] addr,
+    input                       sel,
+    input                       wr,
+    input      [DATA_WIDTH-1:0] wdata,
+    output reg [DATA_WIDTH-1:0] rdata,
+    output reg                  ready);
+
+  // Some memory element to store data for each addr
+  reg [DATA_WIDTH-1:0] ctrl [DEPTH];
+
+  reg  ready_dly;
+  wire ready_pe;
+
+  // If reset is asserted, clear the memory element
+  // Else store data to addr for valid writes
+  // For reads, provide read data back
+  always @ (posedge clk) begin
+    if (!rstn) begin
+      for (int i = 0; i &lt; DEPTH; i += 1) begin
+        ctrl[i] &lt;= RESET_VAL;
+      end
+    end else begin
+      if (sel &amp; ready &amp; wr) begin
+        ctrl[addr] &lt;= wdata;
+      end
+
+      if (sel &amp; ready &amp; !wr) begin
+        rdata &lt;= ctrl[addr];
+      end else begin
+        rdata &lt;= 0;
+      end
+    end
+  end
+
+  // Ready is driven using this always block
+  // During reset, drive ready as 1
+  // Else drive ready low for a clock low
+  // for a read until the data is given back
+  always @ (posedge clk) begin
+    if (!rstn) begin
+      ready &lt;= 1;
+    end else begin
+      if (sel &amp; ready_pe) begin
+        ready &lt;= 1;
+      end
+      if (sel &amp; ready &amp; !wr) begin
+        ready &lt;= 0;
+      end
+    end
+  end
+
+  // Drive internal signal accordingly
+  always @ (posedge clk) begin
+    if (!rstn) ready_dly &lt;= 1;
+    else       ready_dly &lt;= ready;
+  end
+
+  assign ready_pe = ~ready &amp; ready_dly;
+endmodule
+</code></pre></div>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/reg_if.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="reg_if.sv">Descargar</button></span></div><pre><code class="language-verilog">`include &quot;reg_defines.svh&quot;
+
+// Interfaz del controlador de registros
+interface reg_if (input bit clk);
+  logic                   rstn;
+  logic [`ADDR_WIDTH-1:0] addr;
+  logic [`DATA_WIDTH-1:0] wdata;
+  logic [`DATA_WIDTH-1:0] rdata;
+  logic                   wr;
+  logic                   sel;
+  logic                   ready;
+endinterface
+</code></pre></div>
+<h3>Transacción y secuencia</h3>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/reg_item.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="reg_item.sv">Descargar</button></span></div><pre><code class="language-verilog">class reg_item extends uvm_sequence_item;
+  rand bit [`ADDR_WIDTH-1:0] addr;
+  rand bit [`DATA_WIDTH-1:0] wdata;
+  rand bit                   wr;
+  bit [`DATA_WIDTH-1:0]      rdata;
+
+  // Use utility macros to implement standard functions
+  // like print, copy, clone, etc
+  `uvm_object_utils_begin(reg_item)
+    `uvm_field_int (addr,  UVM_DEFAULT)
+    `uvm_field_int (wdata, UVM_DEFAULT)
+    `uvm_field_int (rdata, UVM_DEFAULT)
+    `uvm_field_int (wr,    UVM_DEFAULT)
+  `uvm_object_utils_end
+
+  virtual function string convert2str();
+    return $sformatf(&quot;addr=0x%0h wr=0x%0h wdata=0x%0h rdata=0x%0h&quot;, addr, wr, wdata, rdata);
+  endfunction
+
+  function new(string name = &quot;reg_item&quot;);
+    super.new(name);
+  endfunction
+endclass
+</code></pre></div>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/gen_item_seq.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="gen_item_seq.sv">Descargar</button></span></div><pre><code class="language-verilog">class gen_item_seq extends uvm_sequence #(reg_item);
+  `uvm_object_utils(gen_item_seq)
+  function new(string name=&quot;gen_item_seq&quot;);
+    super.new(name);
+  endfunction
+
+  rand int num;     // Config total number of items to be sent
+
+  // &quot;soft&quot;: el test puede sobrescribir este rango con randomize() with {...}
+  constraint c1 { soft num inside {[2:5]}; }
+
+  virtual task body();
+    for (int i = 0; i &lt; num; i ++) begin
+      reg_item m_item = reg_item::type_id::create(&quot;m_item&quot;);
+      start_item(m_item);
+      if (!m_item.randomize())
+        `uvm_error(&quot;SEQ&quot;, &quot;Fallo al aleatorizar m_item&quot;)
+      `uvm_info(&quot;SEQ&quot;, $sformatf(&quot;Generate new item: &quot;), UVM_LOW)
+      m_item.print();
+      finish_item(m_item);
+    end
+    `uvm_info(&quot;SEQ&quot;, $sformatf(&quot;Done generation of %0d items&quot;, num), UVM_LOW)
+  endtask
+endclass
+</code></pre></div>
+<h3>Driver, monitor y agente</h3>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/driver.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="driver.sv">Descargar</button></span></div><pre><code class="language-verilog">class driver extends uvm_driver #(reg_item);
+  `uvm_component_utils(driver)
+  function new(string name = &quot;driver&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  virtual reg_if vif;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    if (!uvm_config_db#(virtual reg_if)::get(this, &quot;&quot;, &quot;reg_vif&quot;, vif))
+      `uvm_fatal(&quot;DRV&quot;, &quot;Could not get vif&quot;)
+  endfunction
+
+  virtual task run_phase(uvm_phase phase);
+    super.run_phase(phase);
+    vif.sel &lt;= 0;   // (añadido) valor inicial conocido
+    forever begin
+      reg_item m_item;
+      `uvm_info(&quot;DRV&quot;, $sformatf(&quot;Wait for item from sequencer&quot;), UVM_LOW)
+      seq_item_port.get_next_item(m_item);
+      drive_item(m_item);
+      seq_item_port.item_done();
+    end
+  endtask
+
+  virtual task drive_item(reg_item m_item);
+    vif.sel   &lt;= 1;
+    vif.addr  &lt;= m_item.addr;
+    vif.wr    &lt;= m_item.wr;
+    vif.wdata &lt;= m_item.wdata;
+    @ (posedge vif.clk);
+    while (!vif.ready) begin
+      `uvm_info(&quot;DRV&quot;, &quot;Wait until ready is high&quot;, UVM_LOW)
+      @(posedge vif.clk);
+    end
+
+    vif.sel &lt;= 0;
+  endtask
+endclass
+</code></pre></div>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/monitor.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="monitor.sv">Descargar</button></span></div><pre><code class="language-verilog">class monitor extends uvm_monitor;
+  `uvm_component_utils(monitor)
+  function new(string name=&quot;monitor&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  uvm_analysis_port #(reg_item) mon_analysis_port;
+  virtual reg_if vif;
+  semaphore sema4;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    if (!uvm_config_db#(virtual reg_if)::get(this, &quot;&quot;, &quot;reg_vif&quot;, vif))
+      `uvm_fatal(&quot;MON&quot;, &quot;Could not get vif&quot;)
+    sema4 = new(1);
+    mon_analysis_port = new (&quot;mon_analysis_port&quot;, this);
+  endfunction
+
+  virtual task run_phase(uvm_phase phase);
+    super.run_phase(phase);
+    // This task monitors the interface for a complete
+    // transaction and writes into analysis port when complete
+    forever begin
+      @ (posedge vif.clk);
+      if (vif.sel) begin
+        reg_item item = new;
+        item.addr  = vif.addr;
+        item.wr    = vif.wr;
+        item.wdata = vif.wdata;
+
+        if (!vif.wr) begin
+          @(posedge vif.clk);
+          item.rdata = vif.rdata;
+        end
+        `uvm_info(get_type_name(), $sformatf(&quot;Monitor found packet %s&quot;, item.convert2str()), UVM_LOW)
+        mon_analysis_port.write(item);
+      end
+    end
+  endtask
+endclass
+</code></pre></div>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/agent.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="agent.sv">Descargar</button></span></div><pre><code class="language-verilog">class agent extends uvm_agent;
+  `uvm_component_utils(agent)
+  function new(string name=&quot;agent&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  driver                    d0;   // Driver handle
+  monitor                   m0;   // Monitor handle
+  uvm_sequencer #(reg_item) s0;   // Sequencer Handle
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    s0 = uvm_sequencer#(reg_item)::type_id::create(&quot;s0&quot;, this);
+    d0 = driver::type_id::create(&quot;d0&quot;, this);
+    m0 = monitor::type_id::create(&quot;m0&quot;, this);
+  endfunction
+
+  virtual function void connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
+    d0.seq_item_port.connect(s0.seq_item_export);
+  endfunction
+endclass
+</code></pre></div>
+<h3>Scoreboard, ambiente y prueba</h3>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/scoreboard.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="scoreboard.sv">Descargar</button></span></div><pre><code class="language-verilog">class scoreboard extends uvm_scoreboard;
+  `uvm_component_utils(scoreboard)
+  function new(string name=&quot;scoreboard&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  reg_item refq[`DEPTH];   // modelo de referencia: última escritura por dirección
+  uvm_analysis_imp #(reg_item, scoreboard) m_analysis_imp;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    m_analysis_imp = new(&quot;m_analysis_imp&quot;, this);
+  endfunction
+
+  // Corregido: &quot;function void&quot; (en la presentación falta el tipo de retorno)
+  virtual function void write(reg_item item);
+    if (item.wr) begin
+      if (refq[item.addr] == null)
+        refq[item.addr] = new;
+
+      refq[item.addr] = item;
+      `uvm_info(get_type_name(), $sformatf(&quot;Store addr=0x%0h wr=0x%0h data=0x%0h&quot;,
+                item.addr, item.wr, item.wdata), UVM_LOW)
+    end
+
+    if (!item.wr) begin
+      if (refq[item.addr] == null)
+        if (item.rdata != &#x27;h1234)
+          `uvm_error(get_type_name(), $sformatf(&quot;First time read, addr=0x%0h exp=1234 act=0x%0h&quot;,
+                     item.addr, item.rdata))
+        else
+          `uvm_info(get_type_name(), $sformatf(&quot;PASS! First time read, addr=0x%0h exp=1234 act=0x%0h&quot;,
+                    item.addr, item.rdata), UVM_LOW)
+      else
+        if (item.rdata != refq[item.addr].wdata)
+          `uvm_error(get_type_name(), $sformatf(&quot;addr=0x%0h exp=0x%0h act=0x%0h&quot;,
+                     item.addr, refq[item.addr].wdata, item.rdata))
+        else
+          `uvm_info(get_type_name(), $sformatf(&quot;PASS! addr=0x%0h exp=0x%0h act=0x%0h&quot;,
+                    item.addr, refq[item.addr].wdata, item.rdata), UVM_LOW)
+    end
+  endfunction
+endclass
+</code></pre></div>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/env.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="env.sv">Descargar</button></span></div><pre><code class="language-verilog">class env extends uvm_env;
+  `uvm_component_utils(env)
+  function new(string name=&quot;env&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  agent       a0;    // Agent handle
+  scoreboard  sb0;   // Scoreboard handle
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    a0  = agent::type_id::create(&quot;a0&quot;, this);
+    sb0 = scoreboard::type_id::create(&quot;sb0&quot;, this);
+  endfunction
+
+  virtual function void connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
+    a0.m0.mon_analysis_port.connect(sb0.m_analysis_imp);
+  endfunction
+endclass
+</code></pre></div>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/test.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="test.sv">Descargar</button></span></div><pre><code class="language-verilog">class test extends uvm_test;
+  `uvm_component_utils(test)
+  function new(string name = &quot;test&quot;, uvm_component parent=null);
+    super.new(name, parent);
+  endfunction
+
+  env e0;
+  virtual reg_if vif;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    e0 = env::type_id::create(&quot;e0&quot;, this);
+    if (!uvm_config_db#(virtual reg_if)::get(this, &quot;&quot;, &quot;reg_vif&quot;, vif))
+      `uvm_fatal(&quot;TEST&quot;, &quot;Did not get vif&quot;)
+
+    uvm_config_db#(virtual reg_if)::set(this, &quot;e0.a0.*&quot;, &quot;reg_vif&quot;, vif);
+  endfunction
+
+  virtual task run_phase(uvm_phase phase);
+    gen_item_seq seq = gen_item_seq::type_id::create(&quot;seq&quot;);
+    phase.raise_objection(this);
+    apply_reset();
+
+    if (!seq.randomize() with {num inside {[20:30]};})
+      `uvm_fatal(&quot;TEST&quot;, &quot;Fallo al aleatorizar la secuencia&quot;)
+    seq.start(e0.a0.s0);
+    #200;
+    phase.drop_objection(this);
+  endtask
+
+  virtual task apply_reset();
+    vif.rstn &lt;= 0;
+    repeat(5)  @ (posedge vif.clk);
+    vif.rstn &lt;= 1;
+    repeat(10) @ (posedge vif.clk);
+  endtask
+endclass
+</code></pre></div>
+<h3>Paquete, top y compilación</h3>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/reg_pkg.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="reg_pkg.sv">Descargar</button></span></div><pre><code class="language-verilog">`include &quot;reg_defines.svh&quot;
+
+package reg_pkg;
+  import uvm_pkg::*;
+  `include &quot;uvm_macros.svh&quot;
+
+  `include &quot;reg_item.sv&quot;
+  `include &quot;gen_item_seq.sv&quot;
+  `include &quot;driver.sv&quot;
+  `include &quot;monitor.sv&quot;
+  `include &quot;agent.sv&quot;
+  `include &quot;scoreboard.sv&quot;
+  `include &quot;env.sv&quot;
+  `include &quot;test.sv&quot;
+endpackage
+</code></pre></div>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/tb_top.sv</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="tb_top.sv">Descargar</button></span></div><pre><code class="language-verilog">`include &quot;uvm_macros.svh&quot;
+`include &quot;reg_defines.svh&quot;
+
+module tb_top;
+  import uvm_pkg::*;
+  import reg_pkg::*;
+
+  bit clk;
+  always #10 clk = ~clk;
+
+  reg_if _if (clk);
+
+  reg_ctrl #( .ADDR_WIDTH (`ADDR_WIDTH),
+              .DATA_WIDTH (`DATA_WIDTH),
+              .DEPTH      (`DEPTH),
+              .RESET_VAL  (16&#x27;h1234))
+    u0 ( .clk   (clk),
+         .rstn  (_if.rstn),
+         .addr  (_if.addr),
+         .sel   (_if.sel),
+         .wr    (_if.wr),
+         .wdata (_if.wdata),
+         .rdata (_if.rdata),
+         .ready (_if.ready));
+
+  initial begin
+    uvm_config_db#(virtual reg_if)::set(null, &quot;uvm_test_top&quot;, &quot;reg_vif&quot;, _if);
+    run_test(&quot;test&quot;);
+  end
+
+  initial begin
+    if ($test$plusargs(&quot;VCD&quot;)) begin
+      $dumpfile(&quot;reg_ctrl.vcd&quot;);
+      $dumpvars(0, tb_top);
+    end
+  end
+endmodule
+</code></pre></div>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/files.f</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="files.f">Descargar</button></span></div><pre><code class="language-plaintext">+incdir+.
+reg_if.sv
+reg_ctrl.sv
+reg_pkg.sv
+tb_top.sv
+</code></pre></div>
+<div class="code"><div class="code-head"><span class="fname">reg_ctrl/Makefile</span><span class="btns"><button class="copy">Copiar</button><button class="dl" data-name="Makefile">Descargar</button></span></div><pre><code class="language-makefile"># Makefile para VCS + UVM
+# Uso: make            -&gt; compila y simula
+#      make SEED=7     -&gt; otra semilla
+#      make VERB=UVM_HIGH
+#      make waves      -&gt; genera archivo VCD
+
+TEST  ?= test
+VERB  ?= UVM_LOW
+SEED  ?= 1
+UVM   ?= uvm-1.2
+
+VCS_OPTS = -full64 -sverilog -ntb_opts $(UVM) -timescale=1ns/1ps \
+           -debug_access+all -f files.f -l comp.log
+SIM_OPTS = +UVM_TESTNAME=$(TEST) +UVM_VERBOSITY=$(VERB) \
+           +ntb_random_seed=$(SEED) -l sim.log
+
+all: comp sim
+
+comp:
+	vcs $(VCS_OPTS)
+
+sim:
+	./simv $(SIM_OPTS)
+
+waves:
+	./simv $(SIM_OPTS) +VCD
+
+clean:
+	rm -rf simv simv.daidir csrc *.log *.vcd ucli.key vc_hdrs.h \
+	       DVEfiles verdiLog novas.* *.fsdb AN.DB
+
+.PHONY: all comp sim waves clean
+</code></pre></div>
+</section>
+
+<section id="r3">
+<h2><span class="tag p2">Parte 2</span>R3. Ejecutar y ejercicios</h2>
+<pre class="term">cd uvm_lab/reg_ctrl
+make
+grep -E "Store|PASS|UVM_ERROR" sim.log</pre>
+<p>Verá mensajes <code>Store addr=...</code> por cada escritura y <code>PASS! First time read</code> por lecturas de direcciones nunca escritas.</p>
+<div class="box ex"><strong>R3.1 Ejercitar el modelo de referencia</strong>
+Con 256 direcciones y unas 25 transacciones, casi todas las lecturas son a direcciones nunca escritas, así que la rama “lectura después de escritura” del scoreboard casi nunca se prueba. Añada a <code>reg_item</code> la restricción <code>constraint c_addr { addr inside {[0:7]}; }</code> y compruebe que ahora aparecen mensajes <code>PASS! addr=... exp=... act=...</code>.</div>
+<div class="box ex"><strong>R3.2 Error en el DUT</strong>
+En <code>reg_ctrl.sv</code> cambie <code>ctrl[addr] &lt;= wdata;</code> por <code>ctrl[addr] &lt;= wdata ^ 16'h0001;</code>. ¿Detecta el ambiente el error con y sin la restricción del ejercicio R3.1?</div>
+<div class="box ex"><strong>R3.3 Secuencia dirigida</strong>
+Escriba <code>wr_rd_seq</code> que, para cada dirección de 0 a 15, escriba un dato aleatorio y luego lo lea. Ejecútela desde un test nuevo.</div>
+<div class="box ex"><strong>R3.4 Análisis</strong>
+El monitor no comprueba <code>ready</code> al detectar <code>sel = 1</code>. Analice qué ocurre en el ciclo en que <code>ready = 0</code>: ¿se registra una transacción duplicada? (Pista: observe en qué flanco queda el monitor tras capturar <code>rdata</code>.)</div>
+</section>
+
+<!-- ================================================================= -->
+<section id="a1">
+<h2>A1. Cambios respecto al código de la presentación</h2>
+<table>
+<tr><th>Archivo</th><th>Cambio</th><th>Motivo</th></tr>
+<tr><td><code>switch_if.sv</code>, <code>reg_if.sv</code>, <code>tb_top.sv</code>, paquetes, <code>files.f</code>, Makefile</td><td>Nuevos</td><td>La presentación no los muestra y son necesarios para compilar.</td></tr>
+<tr><td><code>scoreboard.sv</code> (ambos)</td><td><code>function write</code> → <code>function void write</code></td><td>Firma requerida por <code>uvm_analysis_imp</code>.</td></tr>
+<tr><td><code>scoreboard.sv</code> (switch)</td><td>Contadores y <code>report_phase</code></td><td>Resumen PASS/FAIL al final.</td></tr>
+<tr><td><code>gen_item_seq.sv</code> (ambos)</td><td><code>uvm_sequence #(item)</code> y verificación de <code>randomize()</code></td><td>Tipado correcto y detección de fallos de aleatorización.</td></tr>
+<tr><td><code>driver.sv</code> (ambos)</td><td>Valor inicial de <code>vld</code>/<code>sel</code> en 0</td><td>Evitar X en la interfaz antes de la primera transacción.</td></tr>
+<tr><td><code>test.sv</code> (switch)</td><td><code>repeat(5) @(posedge clk)</code> antes de <code>drop_objection</code> y <code>print_topology()</code></td><td>Que la última transacción llegue al scoreboard; visualizar la jerarquía.</td></tr>
+<tr><td><code>reg_defines.svh</code></td><td>Nuevo</td><td>Definir <code>`ADDR_WIDTH</code>, <code>`DATA_WIDTH</code> y <code>`DEPTH</code> usados por las clases.</td></tr>
+</table>
+</section>
+
+<section id="a2">
+<h2>A2. Errores comunes y cómo resolverlos</h2>
+<details><summary><code>UVM_FATAL [DRV] Could not get vif</code></summary>
+<p>El <code>set</code> y el <code>get</code> de <code>uvm_config_db</code> no coinciden en tipo, nombre o ruta. Revise: el tipo (<code>virtual switch_if</code>), el nombre (<code>"switch_vif"</code>), y que el test re-publique con <code>"e0.a0.*"</code> usando los mismos nombres de instancia que en <code>create("e0", ...)</code> y <code>create("a0", ...)</code>.</p></details>
+<details><summary><code>UVM_FATAL [INVTST] Requested test from command line +UVM_TESTNAME=xxx not found</code></summary>
+<p>La clase no existe o no está registrada con <code>`uvm_component_utils</code>, o el paquete no se importa en <code>tb_top</code>.</p></details>
+<details><summary>Error de compilación: <code>Identifier 'uvm_sequence_item' has not been declared</code> o macros <code>`uvm_*</code> desconocidas</summary>
+<p>Falta <code>-ntb_opts uvm-1.2</code>, falta <code>import uvm_pkg::*;</code> o <code>`include "uvm_macros.svh"</code> en el paquete.</p></details>
+<details><summary>Error: tipo <code>switch_if</code> no declarado al compilar el paquete</summary>
+<p>El orden de <code>files.f</code> es incorrecto: la interfaz debe compilarse antes que el paquete.</p></details>
+<details><summary>Error de <code>`timescale</code> (“Timescale missing on this module”)</summary>
+<p>Algunos archivos tienen <code>`timescale</code> y otros no. Use solo la opción <code>-timescale=1ns/1ps</code> o ponga la directiva en todos los archivos.</p></details>
+<details><summary>La simulación termina en tiempo 0 sin tráfico</summary>
+<p>No se levantó la objeción en el test, o se bajó antes de arrancar la secuencia.</p></details>
+<details><summary>El scoreboard recibe menos transacciones que las generadas</summary>
+<p>La objeción se baja demasiado pronto, o el monitor pierde transacciones consecutivas (vea el ejercicio 7.1).</p></details>
+<details><summary><code>Randomization failed</code> / el test se detiene con <code>UVM_FATAL [TEST] Fallo al aleatorizar</code></summary>
+<p>Restricciones contradictorias, por ejemplo una restricción “dura” <code>num inside {[2:5]}</code> combinada con <code>with {num inside {[20:30]}}</code>. Use <code>soft</code>.</p></details>
+</section>
+
+<section id="a3">
+<h2>A3. Preguntas de repaso</h2>
+<ol>
+  <li>¿Qué diferencia hay entre un <code>uvm_object</code> y un <code>uvm_component</code>? Dé dos ejemplos de cada uno en este laboratorio.</li>
+  <li>¿Por qué <code>build_phase</code> se ejecuta de arriba hacia abajo y <code>connect_phase</code> de abajo hacia arriba?</li>
+  <li>¿Qué ventaja tiene <code>type_id::create()</code> sobre <code>new()</code>?</li>
+  <li>Explique el recorrido completo de la interfaz virtual desde <code>tb_top</code> hasta el monitor.</li>
+  <li>¿Qué ocurre si el driver nunca llama a <code>item_done()</code>?</li>
+  <li>¿Por qué el monitor del switch usa dos hilos y el del <code>reg_ctrl</code> solo uno?</li>
+  <li>¿Cuál es la diferencia entre un analysis port y el <code>seq_item_port</code>?</li>
+  <li>¿Qué determina que un test “pase” en UVM?</li>
+  <li>¿Para qué sirve <code>soft</code> en una restricción? Dé un ejemplo de este laboratorio.</li>
+  <li>¿Cómo ejecutaría un test distinto sin recompilar?</li>
+</ol>
+<div class="box ex"><strong>Lista de verificación del laboratorio</strong>
+<ul class="check">
+<li>Compilé y simulé el switch sin UVM_ERROR ni UVM_FATAL.</li>
+<li>Identifiqué la topología en el log.</li>
+<li>Detecté un error inyectado en el DUT con el scoreboard.</li>
+<li>Creé un test nuevo y lo ejecuté con <code>+UVM_TESTNAME</code>.</li>
+<li>Compilé y simulé el <code>reg_ctrl</code> y ejercité lecturas después de escrituras.</li>
+</ul></div>
+</section>
+
+<section id="a4">
+<h2>A4. Referencias</h2>
+<ul>
+  <li>Ejemplo de la presentación en EDA Playground: <a href="https://www.edaplayground.com/x/5LwP">https://www.edaplayground.com/x/5LwP</a></li>
+  <li>IEEE 1800.2 — Standard for Universal Verification Methodology Language Reference Manual.</li>
+  <li>Accellera, <em>UVM 1.2 User’s Guide</em> y <em>Class Reference</em>.</li>
+  <li>IEEE 1800 — SystemVerilog Language Reference Manual (regiones de evaluación, clases, aleatorización).</li>
+  <li>Synopsys, <em>VCS User Guide</em> (opciones <code>-ntb_opts</code>, <code>-debug_access</code>, <code>+ntb_random_seed</code>).</li>
+  <li>ChipVerify, tutoriales de UVM (origen de los ejemplos del switch y del reg_ctrl).</li>
+</ul>
+</section>
+
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/verilog.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/makefile.min.js"></script>
+<script>
+try { if (window.hljs) hljs.highlightAll(); } catch (e) {}
+
+document.querySelectorAll('.code').forEach(function (box) {
+  var code = box.querySelector('pre code');
+  box.querySelector('.copy').addEventListener('click', function (ev) {
+    var btn = ev.target, txt = code.innerText;
+    var done = function () { btn.textContent = '¡Copiado!'; setTimeout(function(){ btn.textContent = 'Copiar'; }, 1400); };
+    if (navigator.clipboard) { navigator.clipboard.writeText(txt).then(done, function(){ fallback(txt); done(); }); }
+    else { fallback(txt); done(); }
+  });
+  box.querySelector('.dl').addEventListener('click', function (ev) {
+    var blob = new Blob([code.innerText], {type: 'text/plain'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = ev.target.getAttribute('data-name');
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  });
+});
+function fallback(t){ var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove(); }
+
+// Resaltar la sección activa en el índice
+var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+var obs = new IntersectionObserver(function (entries) {
+  entries.forEach(function (en) {
+    if (en.isIntersecting) {
+      links.forEach(function (l) { l.classList.toggle('active', l.getAttribute('href') === '#' + en.target.id); });
+    }
+  });
+}, {rootMargin: '-20% 0px -70% 0px'});
+document.querySelectorAll('main section').forEach(function (s) { obs.observe(s); });
+</script>
+</body>
+</html>

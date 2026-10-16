@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tutorial: el RAL de UVM desde cero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #18232e; --ink-soft: #4a5866; --paper: #fbfcfb; --panel: #eef3f0; --rule: #d3ddd8;
+    --mask: #1e5b46; --pad: #a87b1f; --code-bg: #10261f; --code-ink: #dbe8e1;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e4ebe7; --ink-soft: #a4b2ab; --paper: #121a17; --panel: #1a2621;
+      --rule: #2d3d36; --mask: #6fbf9c; --pad: #d9b25a; --code-bg: #0b1814; --code-ink: #dbe8e1;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1.0625rem/1.65 var(--sans); }
+  a { color: var(--mask); }
+  a:focus-visible, summary:focus-visible, button:focus-visible { outline: 2px solid var(--pad); outline-offset: 3px; border-radius: 2px; }
+
+  .layout { display: grid; grid-template-columns: 17rem minmax(0, 1fr); max-width: 78rem; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 2.5rem 1.5rem 2rem 1.75rem; border-right: 1px solid var(--rule); font-size: 0.92rem;
+  }
+  nav.toc p { margin: 0 0 0.75rem; font-weight: 600; color: var(--ink-soft); }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; }
+  nav.toc li { margin: 0.15rem 0; }
+  nav.toc li.part { margin-top: 0.9rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); padding-left: 0.5rem; }
+  nav.toc a { display: block; padding: 0.3rem 0.5rem; border-left: 2px solid transparent; color: var(--ink); text-decoration: none; line-height: 1.35; }
+  nav.toc a:hover { border-left-color: var(--pad); background: var(--panel); }
+
+  main { padding: 2.5rem clamp(1.25rem, 4vw, 3.5rem) 5rem; min-width: 0; }
+  .measure { max-width: 46rem; }
+
+  header.title { margin-bottom: 3rem; padding-bottom: 1.5rem; border-bottom: 3px solid var(--mask); position: relative; }
+  header.title::after { content: ""; position: absolute; left: 0; bottom: -3px; width: 4.5rem; height: 3px; background: var(--pad); }
+  header.title h1 { font-size: clamp(2rem, 4.2vw, 2.9rem); line-height: 1.1; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 0.75rem; }
+  header.title .byline { color: var(--ink-soft); margin: 0; }
+
+  h2 { font-size: 1.6rem; line-height: 1.25; font-weight: 600; margin: 4rem 0 1rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.2rem; font-weight: 600; margin: 2.25rem 0 0.6rem; color: var(--mask); }
+  h4 { font-size: 1.02rem; font-weight: 600; margin: 1.6rem 0 0.5rem; }
+  p, ul, ol { margin: 0 0 1rem; }
+  li { margin: 0.25rem 0; }
+
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--panel); padding: 0.08em 0.32em; border-radius: 3px; }
+  pre {
+    margin: 0 0 1.25rem; padding: 1.1rem 1.25rem; overflow-x: auto;
+    background: var(--code-bg); color: var(--code-ink);
+    border-left: 3px solid var(--pad); border-radius: 0 4px 4px 0; font-size: 0.86rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.5rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+  th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--rule); }
+  thead th { background: var(--panel); font-weight: 600; border-bottom: 2px solid var(--mask); }
+
+  .file { font-weight: 600; margin: 1.5rem 0 0.4rem; }
+  .file code { background: none; padding: 0; font-size: 0.95em; }
+
+  .flow {
+    margin: 0 0 1.5rem; padding: 1rem 1.25rem; background: var(--panel);
+    border-radius: 4px; font-family: var(--mono); font-size: 0.8rem; line-height: 1.6;
+    white-space: pre; overflow-x: auto;
+  }
+  .check {
+    margin: 1.5rem 0; padding: 0.9rem 1.1rem; border-left: 3px solid var(--pad);
+    background: var(--panel); border-radius: 0 4px 4px 0;
+  }
+  .check > :last-child { margin-bottom: 0; }
+
+  details.solution { margin: 1.5rem 0 2rem; border: 1px solid var(--rule); border-left: 3px solid var(--mask); border-radius: 0 4px 4px 0; }
+  details.solution > summary {
+    cursor: pointer; padding: 0.8rem 1.1rem; font-weight: 600; color: var(--mask);
+    list-style: none; display: flex; align-items: center; gap: 0.6rem;
+  }
+  details.solution > summary::-webkit-details-marker { display: none; }
+  details.solution > summary::before {
+    content: "+"; display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem;
+    border: 1.5px solid currentColor; border-radius: 3px; font-family: var(--mono); line-height: 1;
+  }
+  details.solution[open] > summary::before { content: "\2212"; }
+  details.solution > .body { padding: 0 1.1rem 0.5rem; }
+
+  .print-btn { font: 500 0.9rem var(--sans); color: var(--mask); background: none; cursor: pointer; border: 1px solid var(--rule); border-radius: 3px; padding: 0.35rem 0.7rem; margin-top: 1rem; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); padding: 1.5rem 1.25rem; }
+  }
+  @media print {
+    nav.toc, .print-btn { display: none; }
+    .layout { display: block; }
+    pre { white-space: pre-wrap; border: 1px solid #999; background: #f4f4f4; color: #000; }
+  }
+  .hljs-keyword, .hljs-built_in { color: #8fd3b4; }
+  .hljs-type { color: #9cc7e8; }
+  .hljs-string { color: #e6c37a; }
+  .hljs-number, .hljs-literal { color: #f0a58a; }
+  .hljs-comment { color: #7f978c; font-style: italic; }
+  .hljs-meta { color: #c7a8e8; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="Contenido">
+  <p>Contenido</p>
+  <ol>
+    <li><a href="#s1">1. Introducción y ruta</a></li>
+    <li><a href="#s2">2. Qué es el RAL</a></li>
+    <li class="part">Construcción</li>
+    <li><a href="#s3">3. El DUT</a></li>
+    <li><a href="#s4">4. El agente APB</a></li>
+    <li><a href="#s5">5. Teoría: anatomía e instanciación del modelo</a></li>
+    <li><a href="#s6">6. Teoría: políticas de acceso y tipos de registros</a></li>
+    <li><a href="#s7">7. Práctica: el modelo de registros y memoria</a></li>
+    <li><a href="#s8">8. Adaptador y predictor</a></li>
+    <li><a href="#s9">9. El backdoor</a></li>
+    <li class="part">Uso</li>
+    <li><a href="#s10">10. Tutorial de accesos frontdoor y backdoor</a></li>
+    <li><a href="#s11">11. Secuencias de registros predefinidas</a></li>
+    <li><a href="#s12">12. Errores comunes y lista de comprobación</a></li>
+    <li><a href="#s13">13. Evaluación y referencias</a></li>
+  </ol>
+  <button class="print-btn" type="button" onclick="document.querySelectorAll('details').forEach(d=>d.open=true);window.print()">Imprimir con soluciones</button>
+</nav>
+
+<main>
+<div class="measure">
+
+<header class="title">
+  <h1>Tutorial: el RAL de UVM desde cero</h1>
+  <p class="byline">13 de octubre de 2026</p>
+</header>
+
+<!-- ===================================================== 1 -->
+<section id="s1">
+<h2>1. Introducción y ruta</h2>
+<p>En este tutorial construirás, paso a paso, un entorno UVM completo con modelo de registros (RAL, <em>Register Abstraction Layer</em>) para un periférico sencillo con seis registros y una memoria de 32 palabras. Al final sabrás describir registros y memorias, conectar el modelo al bus con un adaptador y un predictor, configurar el acceso por backdoor y usar todas las operaciones de acceso, por el bus y por backdoor.</p>
+
+<p><strong>Objetivos de aprendizaje</strong></p>
+<ol>
+  <li>Explicar qué resuelve el RAL y qué son los valores deseado, espejo (<em>mirror</em>) y real.</li>
+  <li>Describir campos, registros, memorias, bloques y mapas, y conocer el proceso exacto de instanciación.</li>
+  <li>Elegir la política de acceso de cada campo entre todas las que define UVM, y conocer los tipos especiales de registros.</li>
+  <li>Implementar un adaptador y conectar un predictor explícito, entendiendo por qué son necesarios.</li>
+  <li>Configurar el backdoor por rutas HDL e implementar un backdoor de usuario.</li>
+  <li>Usar <code>write</code>, <code>read</code>, <code>set</code>, <code>update</code>, <code>mirror</code>, <code>predict</code>, <code>peek</code>, <code>poke</code> y los accesos a memoria por frontdoor y backdoor.</li>
+  <li>Aplicar las secuencias de verificación de registros que trae UVM.</li>
+</ol>
+
+<p><strong>Requisitos previos</strong></p>
+<ul>
+  <li>SystemVerilog y UVM básico: agentes, secuencias y driver, fases, fábrica, <code>uvm_config_db</code>, puertos de análisis.</li>
+  <li>Un simulador con UVM 1.2 o IEEE 1800.2 y acceso DPI a la jerarquía (Questa, VCS, Xcelium o Riviera-PRO). En EDA Playground funciona con Riviera-PRO.</li>
+</ul>
+
+<p><strong>Archivos que construirás</strong></p>
+<div class="table-wrap"><table>
+<thead><tr><th>Archivo</th><th>Contenido</th><th>Sección</th></tr></thead>
+<tbody>
+<tr><td><code>regmem_dut.sv</code></td><td>El DUT: esclavo APB con registros y memoria</td><td>3</td></tr>
+<tr><td><code>apb_if.sv</code>, <code>apb_pkg.sv</code></td><td>Interfaz y agente APB (item, driver, monitor, secuenciador)</td><td>4</td></tr>
+<tr><td><code>regmem_ral_pkg.sv</code></td><td>Modelo de registros y memoria</td><td>7</td></tr>
+<tr><td><code>regmem_env_pkg.sv</code></td><td>Adaptador, env con predictor, secuencias de registros y tests</td><td>8 a 11</td></tr>
+<tr><td><code>tb_top.sv</code></td><td>Módulo superior, reloj, reset y backdoor de usuario</td><td>4 y 9</td></tr>
+</tbody></table></div>
+<p>Orden de compilación: <code>regmem_dut.sv apb_if.sv apb_pkg.sv regmem_ral_pkg.sv regmem_env_pkg.sv tb_top.sv</code>. Las opciones necesarias para el backdoor se explican en la Sección 9.3.</p>
+</section>
+
+<!-- ===================================================== 2 -->
+<section id="s2">
+<h2>2. Qué es el RAL</h2>
+<p>El RAL es un modelo en SystemVerilog de los registros y memorias del DUT: cada registro es un objeto con sus campos, su dirección, su valor de reset y su política de acceso. Las secuencias acceden a los registros por nombre (<code>rm.CTRL.write(...)</code>) en lugar de por dirección y valor crudo, y el modelo se encarga de traducir cada acceso a transacciones del bus y de llevar la cuenta del valor que debería tener cada registro.</p>
+
+<h3>2.1 Qué problemas resuelve</h3>
+<ul>
+  <li><strong>Independencia del bus</strong>: la misma secuencia de registros funciona si el periférico se conecta por APB, AHB o AXI; solo cambia el adaptador.</li>
+  <li><strong>Mantenimiento</strong>: si una dirección o un campo cambia, se cambia el modelo (a menudo generado automáticamente desde IP-XACT o SystemRDL), no cada secuencia.</li>
+  <li><strong>Comprobación</strong>: el modelo predice el valor de cada registro y permite compararlo con el DUT.</li>
+  <li><strong>Acceso rápido</strong>: el backdoor lee y escribe el almacenamiento del DUT directamente, en tiempo cero, sin usar el bus.</li>
+  <li><strong>Pruebas automáticas</strong>: UVM incluye secuencias que verifican valores de reset, cada bit de cada registro y las memorias sin escribir código específico.</li>
+</ul>
+
+<h3>2.2 Arquitectura</h3>
+<div class="flow">  secuencia de registros:  rm.CTRL.write(status, 'h305)
+            │
+            ▼
+  ┌───────────────────────┐      backdoor (DPI, tiempo cero)
+  │   modelo RAL (rm)     │─────────────────────────────────────────┐
+  │  bloque → registros   │                                         │
+  │  → campos, memorias   │◀─── predicción ───┐                     │
+  │  mapa de direcciones  │                   │                     │
+  └──────────┬────────────┘                   │                     │
+             │ uvm_reg_bus_op                 │                     │
+             ▼                                │                     │
+        adaptador  reg2bus()           predictor (bus2reg)          │
+             │ apb_item                       ▲ apb_item            │
+             ▼                                │                     ▼
+       secuenciador ─▶ driver ─▶ bus APB ─▶  DUT  ◀── monitor   tb_top.dut.ctrl…
+                                  (frontdoor)</div>
+
+<h3>2.3 Los tres valores de cada campo</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Valor</th><th>Dónde vive</th><th>Cómo se cambia</th><th>Cómo se consulta</th></tr></thead>
+<tbody>
+<tr><td><strong>Deseado</strong> (<em>desired</em>)</td><td>En el modelo</td><td><code>set()</code>, <code>randomize()</code>, <code>reset()</code></td><td><code>get()</code></td></tr>
+<tr><td><strong>Espejo</strong> (<em>mirrored</em>)</td><td>En el modelo: la mejor estimación de lo que hay en el DUT</td><td>Predicción tras cada acceso, <code>predict()</code>, <code>mirror()</code>, <code>reset()</code></td><td><code>get_mirrored_value()</code></td></tr>
+<tr><td><strong>Real</strong></td><td>En el DUT</td><td>Accesos por bus o backdoor, y el propio hardware</td><td><code>read()</code>, <code>peek()</code>, <code>mirror()</code></td></tr>
+</tbody></table></div>
+<p><code>update()</code> escribe en el DUT los registros cuyo valor deseado difiere del espejo. <code>mirror(UVM_CHECK)</code> lee el DUT y comprueba que coincide con el espejo. Entender estos tres valores es la clave de todo el RAL.</p>
+</section>
+
+<!-- ===================================================== 3 -->
+<section id="s3">
+<h2>3. El DUT: un periférico con registros y memoria</h2>
+<p>El DUT, <code>regmem_dut</code>, es un esclavo APB simplificado (sin estados de espera, <code>pready</code> siempre a 1) con seis registros de 32 bits y una memoria de 32 palabras de 32 bits. Cuando se escribe un comando, el periférico simula una operación que tarda unos ciclos y lo indica en sus registros de estado e interrupción.</p>
+
+<h3>3.1 Interfaz</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Señal</th><th>Dir.</th><th>Ancho</th><th>Descripción</th></tr></thead>
+<tbody>
+<tr><td><code>clk</code>, <code>rst_n</code></td><td>in</td><td>1</td><td>Reloj y reset asíncrono activo a nivel bajo</td></tr>
+<tr><td><code>psel</code>, <code>penable</code>, <code>pwrite</code></td><td>in</td><td>1</td><td>Control APB</td></tr>
+<tr><td><code>paddr</code></td><td>in</td><td>8</td><td>Dirección en bytes</td></tr>
+<tr><td><code>pwdata</code> / <code>prdata</code></td><td>in / out</td><td>32</td><td>Datos de escritura y lectura</td></tr>
+<tr><td><code>pready</code></td><td>out</td><td>1</td><td>Siempre 1</td></tr>
+<tr><td><code>irq</code></td><td>out</td><td>1</td><td>Interrupción: <code>CTRL.IRQ_EN</code> y algún bit de <code>INT_STAT</code> activo</td></tr>
+</tbody></table></div>
+
+<h3>3.2 Mapa de registros</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Offset</th><th>Registro</th><th>Campo</th><th>Bits</th><th>Acceso</th><th>Reset</th><th>Descripción</th></tr></thead>
+<tbody>
+<tr><td rowspan="4"><code>0x00</code></td><td rowspan="4">CTRL</td><td>EN</td><td>0</td><td>RW</td><td>0</td><td>Habilita el periférico</td></tr>
+<tr><td>MODE</td><td>2:1</td><td>RW</td><td>0</td><td>Modo de operación</td></tr>
+<tr><td>IRQ_EN</td><td>3</td><td>RW</td><td>0</td><td>Habilita la salida <code>irq</code></td></tr>
+<tr><td>PRESCALER</td><td>15:8</td><td>RW</td><td>0x01</td><td>Divisor (no puede ser 0)</td></tr>
+<tr><td rowspan="3"><code>0x04</code></td><td rowspan="3">STATUS</td><td>BUSY</td><td>0</td><td>RO</td><td>0</td><td>Operación en curso</td></tr>
+<tr><td>DONE</td><td>1</td><td>RO</td><td>0</td><td>Última operación terminada</td></tr>
+<tr><td>ERR_CNT</td><td>11:4</td><td>RO</td><td>0</td><td>Número de comandos inválidos</td></tr>
+<tr><td rowspan="2"><code>0x08</code></td><td rowspan="2">INT_STAT</td><td>DONE_IRQ</td><td>0</td><td>W1C</td><td>0</td><td>Fin de operación; se borra escribiendo 1</td></tr>
+<tr><td>ERR_IRQ</td><td>1</td><td>W1C</td><td>0</td><td>Comando inválido; se borra escribiendo 1</td></tr>
+<tr><td><code>0x0C</code></td><td>CMD</td><td>OPCODE</td><td>3:0</td><td>WO</td><td>0</td><td>Comando: 0 = nada, 1 a 0xE = operación, 0xF = inválido. Se lee como 0</td></tr>
+<tr><td><code>0x10</code></td><td>SCRATCH</td><td>DATA</td><td>31:0</td><td>RW</td><td>0</td><td>Registro libre para software</td></tr>
+<tr><td><code>0x14</code></td><td>ID</td><td>VALUE</td><td>31:0</td><td>RO</td><td>0x5A5A0001</td><td>Identificador constante</td></tr>
+<tr><td><code>0x80</code>–<code>0xFC</code></td><td>BUF</td><td colspan="2">32 × 32 bits</td><td>RW</td><td>—</td><td>Memoria de datos; palabra <em>i</em> en <code>0x80 + 4·i</code></td></tr>
+</tbody></table></div>
+<p>Los bits no listados están reservados: se leen como 0 y se ignoran al escribir. Comportamiento de un comando: si <code>CTRL.EN = 1</code> y se escribe <code>CMD.OPCODE</code> entre 1 y 0xE, <code>STATUS.BUSY</code> pasa a 1 durante 4 ciclos; al terminar, <code>BUSY = 0</code>, <code>DONE = 1</code> e <code>INT_STAT.DONE_IRQ = 1</code>. Con <code>OPCODE = 0xF</code>, <code>ERR_CNT</code> se incrementa e <code>INT_STAT.ERR_IRQ = 1</code>.</p>
+
+<h3>3.3 RTL</h3>
+<p>Observa los nombres de las señales internas (<code>en_q</code>, <code>presc_q</code>, <code>scratch_q</code>, <code>mem</code>…): son las rutas que usará el backdoor. <code>CTRL</code> se guarda en señales separadas por campo a propósito, para practicar rutas HDL por trozos (<em>slices</em>).</p>
+<p class="file"><code>regmem_dut.sv</code></p>
+<pre><code class="language-verilog">`timescale 1ns/1ps
+module regmem_dut (
+  input  logic        clk,
+  input  logic        rst_n,
+  input  logic        psel,
+  input  logic        penable,
+  input  logic        pwrite,
+  input  logic [7:0]  paddr,
+  input  logic [31:0] pwdata,
+  output logic [31:0] prdata,
+  output logic        pready,
+  output logic        irq
+);
+  // ---------------- Almacenamiento ----------------
+  // CTRL (un registro por campo)
+  logic        en_q;
+  logic [1:0]  mode_q;
+  logic        irq_en_q;
+  logic [7:0]  presc_q;
+  // STATUS
+  logic        busy_q;
+  logic        done_q;
+  logic [7:0]  err_cnt_q;
+  logic [2:0]  busy_cnt;
+  // INT_STAT: bit 0 DONE_IRQ, bit 1 ERR_IRQ
+  logic [1:0]  int_stat_q;
+  // SCRATCH
+  logic [31:0] scratch_q;
+  // ID (constante)
+  wire  [31:0] id_w = 32'h5A5A_0001;
+  // Memoria BUF
+  logic [31:0] mem [0:31];
+
+  wire wr_en  = psel &amp;&amp; penable &amp;&amp; pwrite;
+  wire is_mem = paddr[7];
+
+  assign pready = 1'b1;
+  assign irq    = irq_en_q &amp;&amp; (|int_stat_q);
+
+  // ---------------- Escritura de registros y comportamiento ----------------
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      en_q       &lt;= 1'b0;
+      mode_q     &lt;= 2'b0;
+      irq_en_q   &lt;= 1'b0;
+      presc_q    &lt;= 8'h01;
+      busy_q     &lt;= 1'b0;
+      done_q     &lt;= 1'b0;
+      err_cnt_q  &lt;= 8'h0;
+      busy_cnt   &lt;= 3'd0;
+      int_stat_q &lt;= 2'b0;
+      scratch_q  &lt;= 32'h0;
+    end
+    else begin
+      // Operación en curso
+      if (busy_q) begin
+        if (busy_cnt == 0) begin
+          busy_q        &lt;= 1'b0;
+          done_q        &lt;= 1'b1;
+          int_stat_q[0] &lt;= 1'b1;
+        end
+        else busy_cnt &lt;= busy_cnt - 1;
+      end
+
+      // Accesos de escritura del bus
+      if (wr_en &amp;&amp; !is_mem) begin
+        case (paddr)
+          8'h00: begin
+            en_q     &lt;= pwdata[0];
+            mode_q   &lt;= pwdata[2:1];
+            irq_en_q &lt;= pwdata[3];
+            presc_q  &lt;= pwdata[15:8];
+          end
+          8'h08: int_stat_q &lt;= int_stat_q &amp; ~pwdata[1:0];      // W1C
+          8'h0C: if (en_q &amp;&amp; pwdata[3:0] != 4'h0) begin
+                   if (pwdata[3:0] == 4'hF) begin               // comando inválido
+                     err_cnt_q     &lt;= err_cnt_q + 1;
+                     int_stat_q[1] &lt;= 1'b1;
+                   end
+                   else begin                                   // operación de 4 ciclos
+                     busy_q   &lt;= 1'b1;
+                     done_q   &lt;= 1'b0;
+                     busy_cnt &lt;= 3'd3;
+                   end
+                 end
+`ifdef BUG_SCRATCH
+          8'h10: scratch_q &lt;= {1'b0, pwdata[30:0]};             // error inyectado: pierde el bit 31
+`else
+          8'h10: scratch_q &lt;= pwdata;
+`endif
+          default: ;
+        endcase
+      end
+    end
+  end
+
+  // ---------------- Escritura de memoria (sin reset) ----------------
+  always_ff @(posedge clk)
+    if (wr_en &amp;&amp; is_mem) mem[paddr[6:2]] &lt;= pwdata;
+
+  // ---------------- Lectura ----------------
+  always_comb begin
+    prdata = 32'h0;
+    if (psel &amp;&amp; !pwrite) begin
+      if (is_mem) prdata = mem[paddr[6:2]];
+      else case (paddr)
+        8'h00: prdata = {16'h0, presc_q, 4'h0, irq_en_q, mode_q, en_q};
+        8'h04: prdata = {20'h0, err_cnt_q, 2'b00, done_q, busy_q};
+        8'h08: prdata = {30'h0, int_stat_q};
+        8'h0C: prdata = 32'h0;                                  // CMD es de solo escritura
+        8'h10: prdata = scratch_q;
+        8'h14: prdata = id_w;
+        default: prdata = 32'h0;
+      endcase
+    end
+  end
+endmodule</code></pre>
+</section>
+
+<!-- ===================================================== 4 -->
+<section id="s4">
+<h2>4. El agente APB</h2>
+<p>El RAL no sustituye al agente del bus: lo usa. Necesitamos un agente APB normal, con un item, un driver que ejecute transferencias y un monitor que publique cada transferencia observada por un puerto de análisis (lo usará el predictor).</p>
+
+<h3>4.1 Protocolo usado</h3>
+<p>Cada transferencia tiene dos ciclos: <em>setup</em> (<code>psel = 1</code>, <code>penable = 0</code>, dirección y datos válidos) y <em>access</em> (<code>penable = 1</code>). Como <code>pready</code> es siempre 1, la transferencia termina en el flanco al final del ciclo de access: ahí el DUT captura la escritura y el driver captura <code>prdata</code> en una lectura.</p>
+
+<p class="file"><code>apb_if.sv</code></p>
+<pre><code class="language-verilog">`timescale 1ns/1ps
+interface apb_if (input logic clk, input logic rst_n);
+  logic        psel;
+  logic        penable;
+  logic        pwrite;
+  logic [7:0]  paddr;
+  logic [31:0] pwdata;
+  logic [31:0] prdata;
+  logic        pready;
+endinterface</code></pre>
+
+<p class="file"><code>apb_pkg.sv</code></p>
+<pre><code class="language-verilog">`timescale 1ns/1ps
+package apb_pkg;
+  import uvm_pkg::*;
+  `include "uvm_macros.svh"
+
+  class apb_item extends uvm_sequence_item;
+    rand bit        write;
+    rand bit [7:0]  addr;
+    rand bit [31:0] data;     // dato escrito, o dato leído tras la transferencia
+    `uvm_object_utils_begin(apb_item)
+      `uvm_field_int(write, UVM_DEFAULT)
+      `uvm_field_int(addr,  UVM_DEFAULT)
+      `uvm_field_int(data,  UVM_DEFAULT)
+    `uvm_object_utils_end
+    function new(string name = "apb_item"); super.new(name); endfunction
+    function string convert2string();
+      return $sformatf("%s addr=0x%02h data=0x%08h", write ? "W" : "R", addr, data);
+    endfunction
+  endclass
+
+  typedef uvm_sequencer #(apb_item) apb_sequencer;
+
+  class apb_driver extends uvm_driver #(apb_item);
+    `uvm_component_utils(apb_driver)
+    virtual apb_if vif;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+    function void build_phase(uvm_phase phase);
+      if (!uvm_config_db #(virtual apb_if)::get(this, "", "vif", vif))
+        `uvm_fatal("NOVIF", "apb_driver sin interfaz")
+    endfunction
+
+    task run_phase(uvm_phase phase);
+      vif.psel    &lt;= 1'b0;
+      vif.penable &lt;= 1'b0;
+      wait (vif.rst_n === 1'b1);
+      forever begin
+        seq_item_port.get_next_item(req);
+        @(posedge vif.clk);                       // ciclo de setup
+        vif.psel    &lt;= 1'b1;
+        vif.penable &lt;= 1'b0;
+        vif.pwrite  &lt;= req.write;
+        vif.paddr   &lt;= req.addr;
+        vif.pwdata  &lt;= req.write ? req.data : 32'h0;
+        @(posedge vif.clk);                       // ciclo de access
+        vif.penable &lt;= 1'b1;
+        @(posedge vif.clk);                       // fin de la transferencia (pready = 1)
+        if (!req.write) req.data = vif.prdata;    // la respuesta vuelve en el propio item
+        vif.psel    &lt;= 1'b0;
+        vif.penable &lt;= 1'b0;
+        seq_item_port.item_done();
+      end
+    endtask
+  endclass
+
+  class apb_monitor extends uvm_monitor;
+    `uvm_component_utils(apb_monitor)
+    virtual apb_if vif;
+    uvm_analysis_port #(apb_item) ap;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+    function void build_phase(uvm_phase phase);
+      ap = new("ap", this);
+      if (!uvm_config_db #(virtual apb_if)::get(this, "", "vif", vif))
+        `uvm_fatal("NOVIF", "apb_monitor sin interfaz")
+    endfunction
+
+    task run_phase(uvm_phase phase);
+      forever begin
+        @(posedge vif.clk);
+        if (vif.psel &amp;&amp; vif.penable &amp;&amp; vif.pready) begin
+          apb_item tr = apb_item::type_id::create("tr");
+          tr.write = vif.pwrite;
+          tr.addr  = vif.paddr;
+          tr.data  = vif.pwrite ? vif.pwdata : vif.prdata;
+          `uvm_info("APB", tr.convert2string(), UVM_MEDIUM)
+          ap.write(tr);
+        end
+      end
+    endtask
+  endclass
+
+  class apb_agent extends uvm_agent;
+    `uvm_component_utils(apb_agent)
+    apb_sequencer sqr;
+    apb_driver    drv;
+    apb_monitor   mon;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      sqr = apb_sequencer::type_id::create("sqr", this);
+      drv = apb_driver::type_id::create("drv", this);
+      mon = apb_monitor::type_id::create("mon", this);
+    endfunction
+    function void connect_phase(uvm_phase phase);
+      drv.seq_item_port.connect(sqr.seq_item_export);
+    endfunction
+  endclass
+
+  // Secuencia cruda (sin RAL); la usaremos para demostrar el predictor
+  class apb_raw_write_seq extends uvm_sequence #(apb_item);
+    `uvm_object_utils(apb_raw_write_seq)
+    bit [7:0]  addr;
+    bit [31:0] data;
+    function new(string name = "apb_raw_write_seq"); super.new(name); endfunction
+    task body();
+      req = apb_item::type_id::create("req");
+      start_item(req);
+      req.write = 1; req.addr = addr; req.data = data;
+      finish_item(req);
+    endtask
+  endclass
+endpackage</code></pre>
+
+<p class="file"><code>tb_top.sv</code> (versión inicial; se completará en la Sección 9)</p>
+<pre><code class="language-verilog">`timescale 1ns/1ps
+module tb_top;
+  import uvm_pkg::*;
+  `include "uvm_macros.svh"
+  import apb_pkg::*;
+  import regmem_env_pkg::*;
+
+  logic clk = 0;
+  always #5 clk = ~clk;
+
+  logic rst_n;
+  initial begin
+    rst_n = 1'b0;
+    #22ns rst_n = 1'b1;
+  end
+
+  apb_if apb (.clk(clk), .rst_n(rst_n));
+
+  regmem_dut dut (
+    .clk(clk), .rst_n(rst_n),
+    .psel(apb.psel), .penable(apb.penable), .pwrite(apb.pwrite),
+    .paddr(apb.paddr), .pwdata(apb.pwdata), .prdata(apb.prdata),
+    .pready(apb.pready), .irq()
+  );
+
+  initial begin
+    uvm_config_db #(virtual apb_if)::set(null, "uvm_test_top.env.agt.*", "vif", apb);
+    run_test();
+  end
+endmodule</code></pre>
+</section>
+
+<!-- ===================================================== 5 -->
+<section id="s5">
+<h2>5. Teoría: anatomía del modelo y proceso de instanciación</h2>
+<p>Un modelo RAL es un árbol de objetos: un bloque contiene registros, memorias, subbloques y mapas de direcciones; cada registro contiene campos. Todos son <code>uvm_object</code>, no componentes: se crean con la fábrica, pero no participan en las fases. Esta sección describe cada clase, cada argumento de configuración y el orden exacto en que se construye el modelo.</p>
+
+<h3>5.1 Las clases principales</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Clase</th><th>Representa</th><th>Contiene</th></tr></thead>
+<tbody>
+<tr><td><code>uvm_reg_field</code></td><td>Un campo: rango de bits con una política de acceso</td><td>Valores deseado y espejo, reset, política, volatilidad</td></tr>
+<tr><td><code>uvm_reg</code></td><td>Un registro</td><td>Campos; rutas HDL; frontdoor/backdoor opcionales</td></tr>
+<tr><td><code>uvm_reg_file</code></td><td>Agrupación lógica de registros (por ejemplo, los de un canal)</td><td>Registros y otros register files</td></tr>
+<tr><td><code>uvm_mem</code></td><td>Una memoria: un array de palabras sin campos ni espejo</td><td>Tamaño, ancho, política, ruta HDL</td></tr>
+<tr><td><code>uvm_reg_block</code></td><td>Un bloque: un periférico, un subsistema o el chip</td><td>Registros, memorias, subbloques, mapas</td></tr>
+<tr><td><code>uvm_reg_map</code></td><td>Un mapa de direcciones vista desde una interfaz de bus</td><td>Offsets, derechos de acceso, secuenciador y adaptador</td></tr>
+<tr><td><code>uvm_reg_adapter</code></td><td>Traductor entre operaciones de registro y items del bus</td><td>—</td></tr>
+<tr><td><code>uvm_reg_predictor</code></td><td>Componente que actualiza el espejo a partir de lo que observa el monitor</td><td>Referencias al mapa y al adaptador</td></tr>
+<tr><td><code>uvm_reg_sequence</code></td><td>Clase base para secuencias que usan el modelo</td><td>Handle <code>model</code></td></tr>
+<tr><td><code>uvm_reg_backdoor</code>, <code>uvm_reg_frontdoor</code></td><td>Accesos de usuario que sustituyen a los predeterminados</td><td>—</td></tr>
+</tbody></table></div>
+
+<h3>5.2 Configuración de un campo</h3>
+<pre><code class="language-verilog">field.configure(parent, size, lsb_pos, access, volatile, reset, has_reset, is_rand, individually_accessible);</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Argumento</th><th>Significado</th></tr></thead>
+<tbody>
+<tr><td><code>parent</code></td><td>Registro que contiene el campo (<code>this</code>, dentro de <code>build()</code> del registro)</td></tr>
+<tr><td><code>size</code></td><td>Número de bits</td></tr>
+<tr><td><code>lsb_pos</code></td><td>Posición del bit menos significativo dentro del registro</td></tr>
+<tr><td><code>access</code></td><td>Política de acceso (<code>"RW"</code>, <code>"RO"</code>, <code>"W1C"</code>… Sección 6)</td></tr>
+<tr><td><code>volatile</code></td><td>1 si el hardware puede cambiar el valor por sí mismo. Los campos volátiles no se comparan en <code>mirror(UVM_CHECK)</code></td></tr>
+<tr><td><code>reset</code></td><td>Valor de reset</td></tr>
+<tr><td><code>has_reset</code></td><td>1 si el campo tiene valor de reset conocido. Si es 0, las comprobaciones de reset lo ignoran</td></tr>
+<tr><td><code>is_rand</code></td><td>1 si el valor deseado puede aleatorizarse con <code>randomize()</code>. Solo tiene efecto si la política lo permite (por ejemplo, no en campos RO)</td></tr>
+<tr><td><code>individually_accessible</code></td><td>1 si el campo puede escribirse sin tocar el resto del registro. Requiere que el campo ocupe bytes completos o que el bus admita <em>byte enables</em></td></tr>
+</tbody></table></div>
+
+<h3>5.3 Constructor y configuración de un registro</h3>
+<pre><code class="language-verilog">function new(string name = "ctrl_reg");
+  super.new(name, 32, UVM_NO_COVERAGE);     // nombre, n_bits, cobertura
+endfunction
+
+reg.configure(blk_parent, regfile_parent = null, hdl_path = "");
+reg.build();                                // crea y configura sus campos</code></pre>
+<ul>
+  <li><code>n_bits</code> es el tamaño del registro; puede ser mayor que el bus: el mapa lo dividirá en varios accesos.</li>
+  <li><code>has_coverage</code> indica qué modelos de cobertura puede construir (<code>UVM_NO_COVERAGE</code>, <code>UVM_CVR_REG_BITS</code>, <code>UVM_CVR_ADDR_MAP</code>, <code>UVM_CVR_FIELD_VALS</code>, <code>UVM_CVR_ALL</code>).</li>
+  <li><code>build()</code> es un método virtual del propio registro (no una fase): lo llama el bloque justo después de <code>configure()</code>.</li>
+  <li><code>hdl_path</code> en <code>configure</code> declara una ruta que cubre todo el registro; para registros repartidos en varias señales se usa <code>add_hdl_path_slice()</code>.</li>
+</ul>
+
+<h3>5.4 Memorias</h3>
+<pre><code class="language-verilog">function new(string name = "buf_mem");
+  super.new(name, 32, 32, "RW", UVM_NO_COVERAGE);   // nombre, nº de palabras, bits por palabra, acceso
+endfunction
+
+mem.configure(blk_parent, hdl_path = "");</code></pre>
+<ul>
+  <li>Una memoria no tiene campos, ni valor deseado, ni espejo: cada acceso va siempre al DUT. Por eso no hay <code>mirror</code>, <code>set</code> ni <code>update</code> para memorias.</li>
+  <li>El acceso puede ser <code>"RW"</code> o <code>"RO"</code> (ROM).</li>
+  <li>El backdoor accede a la palabra <em>i</em> añadiendo <code>[i]</code> a la ruta HDL.</li>
+  <li>Para repartir zonas de memoria entre secuencias existe <code>uvm_mem_mam</code> (gestor de asignación).</li>
+</ul>
+
+<h3>5.5 El bloque y el mapa</h3>
+<pre><code class="language-verilog">default_map = create_map(name, base_addr, n_bytes, endian, byte_addressing = 1);
+default_map.add_reg(reg, offset, rights = "RW", unmapped = 0, frontdoor = null);
+default_map.add_mem(mem, offset, rights = "RW", unmapped = 0, frontdoor = null);
+default_map.add_submap(sub_block.default_map, offset);</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Argumento</th><th>Significado</th></tr></thead>
+<tbody>
+<tr><td><code>base_addr</code></td><td>Dirección base del mapa; los offsets se suman a ella</td></tr>
+<tr><td><code>n_bytes</code></td><td>Ancho del bus en bytes (4 para un bus de 32 bits)</td></tr>
+<tr><td><code>endian</code></td><td>Orden de bytes cuando un registro necesita varios accesos: <code>UVM_LITTLE_ENDIAN</code>, <code>UVM_BIG_ENDIAN</code>, <code>UVM_LITTLE_FIFO</code>, <code>UVM_BIG_FIFO</code></td></tr>
+<tr><td><code>byte_addressing</code></td><td>1 si las direcciones cuentan bytes (palabras consecutivas a +4); 0 si cuentan palabras (+1)</td></tr>
+<tr><td><code>rights</code></td><td>Derechos desde este mapa: <code>"RW"</code>, <code>"RO"</code> o <code>"WO"</code>. Un mismo registro puede estar en varios mapas con derechos distintos</td></tr>
+<tr><td><code>unmapped</code></td><td>1 si el registro no tiene dirección propia; entonces debe tener un frontdoor de usuario</td></tr>
+<tr><td><code>frontdoor</code></td><td>Secuencia de acceso de usuario que sustituye al acceso predeterminado</td></tr>
+</tbody></table></div>
+<p>El primer mapa creado se asigna automáticamente a <code>default_map</code>. Un bloque puede tener varios mapas (por ejemplo, uno para el bus del procesador y otro para un bus de depuración).</p>
+
+<h3>5.6 El proceso de instanciación, paso a paso</h3>
+<div class="flow">env::build_phase
+ └─ rm = regmem_reg_block::type_id::create("rm")      1. crear el bloque (fábrica)
+ └─ rm.build()                                        2. construir su contenido:
+     ├─ CTRL = ctrl_reg::type_id::create("CTRL")         a. crear cada registro
+     ├─ CTRL.configure(this, null, "")                   b. asociarlo al bloque (y a su ruta HDL)
+     ├─ CTRL.build()                                     c. crear y configurar sus campos
+     │    └─ EN = uvm_reg_field::type_id::create("EN")
+     │    └─ EN.configure(this, 1, 0, "RW", ...)
+     ├─ CTRL.add_hdl_path_slice("en_q", 0, 1) ...        d. rutas HDL por trozos (backdoor)
+     ├─ BUF.configure(this, "mem")                       e. memorias
+     ├─ default_map = create_map(...)                    f. mapa de direcciones
+     └─ default_map.add_reg(CTRL, 'h00, "RW") ...        g. colocar registros y memorias
+ └─ rm.set_hdl_path_root("tb_top.dut")                3. raíz de las rutas HDL
+ └─ rm.lock_model()                                   4. cerrar el modelo
+ └─ rm.reset()                                        5. espejo y deseado = valores de reset
+env::connect_phase
+ └─ rm.default_map.set_sequencer(agt.sqr, adapter)    6. conectar el mapa al bus
+ └─ predictor.map = ...; predictor.adapter = ...;     7. predictor explícito
+    agt.mon.ap.connect(predictor.bus_in)
+ └─ rm.default_map.set_auto_predict(0)</div>
+<ul>
+  <li><strong>Por qué <code>build()</code> y no el constructor</strong>: la fábrica necesita constructores con firma fija (solo el nombre). La construcción del contenido se separa en <code>build()</code> para que cada nivel pueda sustituirse por override antes de construirse.</li>
+  <li><strong>Por qué se declaran <code>rand</code></strong>: los registros del bloque y los campos de cada registro se declaran <code>rand</code> para que <code>rm.randomize()</code> o <code>rm.CTRL.randomize()</code> aleatoricen sus valores deseados respetando las restricciones.</li>
+  <li><strong><code>lock_model()</code></strong> cierra el modelo: calcula las direcciones de todos los mapas, detecta solapamientos y prepara las búsquedas por dirección (que usa el predictor). Después no se pueden añadir registros. Sin él, el predictor no encuentra los registros y las búsquedas por dirección fallan.</li>
+  <li><strong><code>reset()</code></strong> pone espejo y deseado al valor de reset; conviene llamarlo al construir el modelo y cada vez que el DUT se resetea.</li>
+  <li><strong>Quién construye el modelo</strong>: lo habitual es el env, salvo que el test ya haya pasado uno (por ejemplo, el de un nivel superior que contiene este bloque como subbloque).</li>
+</ul>
+
+<h3>5.7 Bloques jerárquicos</h3>
+<pre><code class="language-verilog">// En el bloque del chip
+periph = regmem_reg_block::type_id::create("periph");
+periph.configure(this, "u_periph");        // padre y ruta HDL relativa
+periph.build();
+default_map.add_submap(periph.default_map, 'h4000_0000);</code></pre>
+<p>Así un modelo de chip reutiliza el modelo de cada periférico: las direcciones se componen (base del submapa más offset) y las rutas HDL también (<code>tb_top.chip.u_periph.en_q</code>).</p>
+</section>
+
+<!-- ===================================================== 6 -->
+<section id="s6">
+<h2>6. Teoría: políticas de acceso y tipos de registros</h2>
+<p>La política de acceso de un campo dice qué efecto tienen las escrituras y las lecturas sobre su valor. El modelo usa la política para predecir el nuevo valor del espejo después de cada acceso, y para emular el comportamiento del hardware en los accesos por backdoor.</p>
+
+<h3>6.1 Catálogo completo de políticas de acceso</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Política</th><th>Efecto de una escritura</th><th>Efecto de una lectura</th><th>Uso típico</th></tr></thead>
+<tbody>
+<tr><td><code>RO</code></td><td>Ninguno</td><td>Ninguno</td><td>Estado, constantes</td></tr>
+<tr><td><code>RW</code></td><td>Se escribe el valor</td><td>Ninguno</td><td>Configuración</td></tr>
+<tr><td><code>RC</code></td><td>Ninguno</td><td>Se borran todos los bits</td><td>Contadores que se leen y reinician</td></tr>
+<tr><td><code>RS</code></td><td>Ninguno</td><td>Se ponen a 1 todos los bits</td><td>Semáforos</td></tr>
+<tr><td><code>WRC</code></td><td>Se escribe el valor</td><td>Se borran todos los bits</td><td>Registro escribible que se limpia al leer</td></tr>
+<tr><td><code>WRS</code></td><td>Se escribe el valor</td><td>Se ponen a 1 todos los bits</td><td>—</td></tr>
+<tr><td><code>WC</code></td><td>Se borran todos los bits (el valor escrito da igual)</td><td>Ninguno</td><td>Borrado de estado con cualquier escritura</td></tr>
+<tr><td><code>WS</code></td><td>Se ponen a 1 todos los bits</td><td>Ninguno</td><td>—</td></tr>
+<tr><td><code>WSRC</code></td><td>Se ponen a 1 todos los bits</td><td>Se borran todos los bits</td><td>—</td></tr>
+<tr><td><code>WCRS</code></td><td>Se borran todos los bits</td><td>Se ponen a 1 todos los bits</td><td>—</td></tr>
+<tr><td><code>W1C</code></td><td>Cada 1 borra su bit; los 0 no tienen efecto</td><td>Ninguno</td><td>Flags de interrupción</td></tr>
+<tr><td><code>W1S</code></td><td>Cada 1 pone su bit a 1</td><td>Ninguno</td><td>Registros "set" de máscaras</td></tr>
+<tr><td><code>W1T</code></td><td>Cada 1 invierte su bit</td><td>Ninguno</td><td>Conmutadores</td></tr>
+<tr><td><code>W0C</code></td><td>Cada 0 borra su bit</td><td>Ninguno</td><td>—</td></tr>
+<tr><td><code>W0S</code></td><td>Cada 0 pone su bit a 1</td><td>Ninguno</td><td>—</td></tr>
+<tr><td><code>W0T</code></td><td>Cada 0 invierte su bit</td><td>Ninguno</td><td>—</td></tr>
+<tr><td><code>W1SRC</code></td><td>Cada 1 pone su bit a 1</td><td>Se borran todos los bits</td><td>—</td></tr>
+<tr><td><code>W1CRS</code></td><td>Cada 1 borra su bit</td><td>Se ponen a 1 todos los bits</td><td>—</td></tr>
+<tr><td><code>W0SRC</code></td><td>Cada 0 pone su bit a 1</td><td>Se borran todos los bits</td><td>—</td></tr>
+<tr><td><code>W0CRS</code></td><td>Cada 0 borra su bit</td><td>Se ponen a 1 todos los bits</td><td>—</td></tr>
+<tr><td><code>WO</code></td><td>Se escribe el valor</td><td>No permitida (error en el modelo; el DUT devuelve lo que implemente)</td><td>Comandos</td></tr>
+<tr><td><code>WOC</code></td><td>Se borran todos los bits</td><td>No permitida</td><td>—</td></tr>
+<tr><td><code>WOS</code></td><td>Se ponen a 1 todos los bits</td><td>No permitida</td><td>—</td></tr>
+<tr><td><code>W1</code></td><td>Solo la primera escritura tras el reset tiene efecto</td><td>Ninguno</td><td>Configuración que se fija una vez (bloqueo)</td></tr>
+<tr><td><code>WO1</code></td><td>Solo la primera escritura tras el reset tiene efecto</td><td>No permitida</td><td>Claves, configuración de un solo uso</td></tr>
+<tr><td><code>NOACCESS</code></td><td>Ninguno</td><td>Ninguno</td><td>Campos que no deben tocarse desde este mapa</td></tr>
+</tbody></table></div>
+<p>Para comportamientos no cubiertos, <code>uvm_reg_field::define_access("MI_POLITICA")</code> registra una política nueva, cuyo efecto se implementa con callbacks (Sección 6.4). Ten en cuenta que muchas herramientas de generación (IP-XACT, SystemRDL) traducen sus propias políticas a esta lista.</p>
+
+<h4>Otras propiedades que afectan al comportamiento</h4>
+<ul>
+  <li><strong>Volátil</strong>: el hardware cambia el valor (estado, contadores, flags de interrupción). El espejo solo se actualiza al leer, y <code>mirror(UVM_CHECK)</code> no lo compara. Olvidar marcar un campo como volátil produce falsos errores.</li>
+  <li><strong>Sin reset</strong> (<code>has_reset = 0</code>): valor indeterminado tras el reset; las pruebas de reset no lo comprueban.</li>
+  <li><strong>No aleatorizable</strong> (<code>is_rand = 0</code>): <code>randomize()</code> no lo toca.</li>
+  <li><strong>Derechos del mapa</strong>: un registro con campos RW puede ser <code>"RO"</code> desde un mapa concreto. Los derechos del mapa limitan lo que se intenta; la política del campo describe lo que hace el hardware.</li>
+</ul>
+
+<h3>6.2 Tipos de registros</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Tipo</th><th>Cómo se modela</th><th>Ejemplo</th></tr></thead>
+<tbody>
+<tr><td>Registro de configuración</td><td><code>uvm_reg</code> con campos <code>RW</code></td><td><code>CTRL</code>, <code>SCRATCH</code></td></tr>
+<tr><td>Registro mixto</td><td>Campos con políticas distintas en el mismo registro</td><td>Un registro con <code>EN</code> (RW) y <code>LOCKED</code> (RO)</td></tr>
+<tr><td>Registro de estado</td><td>Campos <code>RO</code> y volátiles</td><td><code>STATUS</code></td></tr>
+<tr><td>Registro constante</td><td><code>RO</code>, no volátil, con reset igual al valor fijo</td><td><code>ID</code></td></tr>
+<tr><td>Registro de interrupciones</td><td>Campos <code>W1C</code> (o <code>RC</code>) volátiles</td><td><code>INT_STAT</code></td></tr>
+<tr><td>Registro de comando</td><td>Campos <code>WO</code>, <code>WOC</code>, <code>W1</code> o <code>WO1</code></td><td><code>CMD</code></td></tr>
+<tr><td>Registro con bits reservados</td><td>Los bits sin campo no se modelan: se escriben como 0 y se ignoran al comparar</td><td>Bits 31:16 de <code>CTRL</code></td></tr>
+<tr><td>Registro más ancho que el bus</td><td><code>n_bits</code> mayor que <code>8·n_bytes</code>; el mapa lo divide en varios accesos según el <code>endian</code></td><td>Un contador de 64 bits en un bus de 32</td></tr>
+<tr><td>Array de registros</td><td>Array de handles creados en un bucle, cada uno con su offset</td><td>8 registros de umbral consecutivos</td></tr>
+<tr><td>Register file</td><td><code>uvm_reg_file</code> que agrupa registros repetidos; se instancia varias veces con offsets distintos</td><td>Registros de cada canal DMA</td></tr>
+<tr><td>Registro compartido entre mapas</td><td>El mismo registro añadido a dos mapas, con offsets y derechos distintos</td><td>Accesible por el bus del CPU y por depuración</td></tr>
+<tr><td>Registro indirecto</td><td><code>uvm_reg_indirect_data</code>: un registro índice y un registro de datos que acceden a un array interno</td><td>Tabla de 256 entradas tras dos direcciones</td></tr>
+<tr><td>Registro FIFO</td><td><code>uvm_reg_fifo</code>: cada escritura encola, cada lectura desencola; el modelo mantiene la cola</td><td>FIFO de transmisión</td></tr>
+<tr><td>Registros alias</td><td>Dos objetos registro sobre el mismo almacenamiento, con políticas distintas, sincronizados por callbacks</td><td><code>INT_STAT</code> (W1C) y <code>INT_SET</code> (W1S)</td></tr>
+<tr><td>Registro no mapeado / con frontdoor de usuario</td><td><code>add_reg(..., unmapped = 1, frontdoor)</code> o <code>set_frontdoor()</code>: el acceso lo implementa una secuencia propia</td><td>Registros tras un protocolo serie o una ventana</td></tr>
+<tr><td>Registros y campos virtuales</td><td><code>uvm_vreg</code>/<code>uvm_vreg_field</code>: estructuras implementadas en una memoria</td><td>Descriptores de DMA en RAM</td></tr>
+<tr><td>Registro con comportamiento peculiar</td><td>Callbacks (<code>uvm_reg_cbs</code>) o sobrescritura de métodos para efectos secundarios</td><td>Bit que se autoborra al terminar</td></tr>
+<tr><td>Memoria</td><td><code>uvm_mem</code>, <code>"RW"</code> o <code>"RO"</code></td><td><code>BUF</code></td></tr>
+</tbody></table></div>
+
+<h3>6.3 Fragmentos de los tipos especiales</h3>
+<h4>Array de registros</h4>
+<pre><code class="language-verilog">rand thr_reg THR[8];
+foreach (THR[i]) begin
+  THR[i] = thr_reg::type_id::create($sformatf("THR[%0d]", i));
+  THR[i].configure(this, null, $sformatf("thr_q[%0d]", i));
+  THR[i].build();
+  default_map.add_reg(THR[i], 'h40 + 4*i, "RW");
+end</code></pre>
+
+<h4>Register file repetido</h4>
+<pre><code class="language-verilog">class chan_rf extends uvm_reg_file;
+  `uvm_object_utils(chan_rf)
+  rand chan_cfg_reg CFG;
+  rand chan_len_reg LEN;
+  function new(string name = "chan_rf"); super.new(name); endfunction
+  virtual function void build();
+    CFG = chan_cfg_reg::type_id::create("CFG");
+    CFG.configure(get_block(), this, "cfg_q");
+    CFG.build();
+    LEN = chan_len_reg::type_id::create("LEN");
+    LEN.configure(get_block(), this, "len_q");
+    LEN.build();
+  endfunction
+  virtual function void map(uvm_reg_map mp, uvm_reg_addr_t offset);
+    mp.add_reg(CFG, offset + 'h0);
+    mp.add_reg(LEN, offset + 'h4);
+  endfunction
+endclass
+
+// En el bloque:
+foreach (CH[i]) begin
+  CH[i] = chan_rf::type_id::create($sformatf("CH[%0d]", i));
+  CH[i].configure(this, null, $sformatf("u_ch[%0d]", i));
+  CH[i].build();
+  CH[i].map(default_map, 'h100 + 'h10*i);
+end</code></pre>
+
+<h4>Registro indirecto</h4>
+<pre><code class="language-verilog">rand idx_reg  IDX;               // registro índice normal
+rand uvm_reg  TABLE[256];        // registros "internos", sin dirección
+rand uvm_reg_indirect_data DATA; // registro de datos
+
+DATA = uvm_reg_indirect_data::type_id::create("DATA");
+DATA.configure(IDX, TABLE, this, null);
+DATA.build();
+default_map.add_reg(IDX,  'h20);
+default_map.add_reg(DATA, 'h24);
+// Acceso: TABLE[17].write(...) escribe 17 en IDX y el dato en DATA</code></pre>
+
+<h4>Campo con política propia o efecto secundario</h4>
+<pre><code class="language-verilog">// Bit START que se autoborra: el espejo vuelve a 0 tras cada escritura
+class selfclear_cb extends uvm_reg_cbs;
+  `uvm_object_utils(selfclear_cb)
+  function new(string name = "selfclear_cb"); super.new(name); endfunction
+  virtual function void post_predict(input uvm_reg_field fld, input uvm_reg_data_t previous,
+                                     inout uvm_reg_data_t value, input uvm_predict_e kind,
+                                     input uvm_path_e path, input uvm_reg_map map);
+    if (kind == UVM_PREDICT_WRITE) value = 0;
+  endfunction
+endclass
+
+// Registro del callback sobre el campo:
+selfclear_cb cb = new();
+uvm_reg_field_cb::add(rm.CMD2.START, cb);</code></pre>
+
+<h3>6.4 Callbacks del modelo</h3>
+<p><code>uvm_reg_cbs</code> define puntos de extensión en campos, registros, memorias y backdoors: <code>pre_write</code>, <code>post_write</code>, <code>pre_read</code>, <code>post_read</code>, <code>post_predict</code> y <code>encode</code>/<code>decode</code> (para backdoors). Se usan para modelar efectos secundarios (un registro que borra otro al escribirse), alias, autoborrado y políticas propias, sin cambiar las clases del modelo.</p>
+</section>
+
+<!-- ===================================================== 7 -->
+<section id="s7">
+<h2>7. Práctica: el modelo de registros y memoria</h2>
+<p>Con la teoría anterior, escribe el modelo de <code>regmem_dut</code>. Cada registro es una clase con sus campos; la memoria es una clase sencilla; el bloque los crea, les asigna rutas HDL y los coloca en el mapa.</p>
+
+<h3>7.1 Decisiones de modelado</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Registro</th><th>Decisión</th><th>Por qué</th></tr></thead>
+<tbody>
+<tr><td>CTRL</td><td>Cuatro campos RW; restricción <code>PRESCALER != 0</code>; ruta HDL por trozos</td><td>La especificación prohíbe 0; el DUT guarda cada campo en una señal distinta</td></tr>
+<tr><td>STATUS</td><td>Campos RO <strong>volátiles</strong>, no aleatorizables</td><td>El hardware los cambia; no deben compararse con el espejo</td></tr>
+<tr><td>INT_STAT</td><td>Campos W1C <strong>volátiles</strong></td><td>El hardware los pone a 1; el software los borra</td></tr>
+<tr><td>CMD</td><td>Campo WO, sin ruta HDL</td><td>No tiene almacenamiento en el DUT; el backdoor no es posible</td></tr>
+<tr><td>SCRATCH</td><td>Un campo RW de 32 bits</td><td>Registro libre</td></tr>
+<tr><td>ID</td><td>Campo RO no volátil con reset 0x5A5A0001</td><td>Constante: el valor de reset es el valor esperado siempre</td></tr>
+<tr><td>BUF</td><td><code>uvm_mem</code> de 32 × 32, ruta <code>mem</code></td><td>El backdoor añadirá <code>[i]</code></td></tr>
+</tbody></table></div>
+
+<h3>7.2 Código del modelo</h3>
+<p class="file"><code>regmem_ral_pkg.sv</code></p>
+<pre><code class="language-verilog">`timescale 1ns/1ps
+package regmem_ral_pkg;
+  import uvm_pkg::*;
+  `include "uvm_macros.svh"
+
+  // ------------------------------------------------------------ CTRL @ 0x00
+  class ctrl_reg extends uvm_reg;
+    `uvm_object_utils(ctrl_reg)
+    rand uvm_reg_field EN;
+    rand uvm_reg_field MODE;
+    rand uvm_reg_field IRQ_EN;
+    rand uvm_reg_field PRESCALER;
+
+    constraint c_presc { PRESCALER.value != 0; }
+
+    function new(string name = "ctrl_reg");
+      super.new(name, 32, UVM_NO_COVERAGE);
+    endfunction
+
+    virtual function void build();
+      EN        = uvm_reg_field::type_id::create("EN");
+      MODE      = uvm_reg_field::type_id::create("MODE");
+      IRQ_EN    = uvm_reg_field::type_id::create("IRQ_EN");
+      PRESCALER = uvm_reg_field::type_id::create("PRESCALER");
+      //                   parent size lsb  acc   vol reset has_rst rand indiv
+      EN.configure       (this,  1,   0, "RW",  0,  1'b0,  1,     1,   0);
+      MODE.configure     (this,  2,   1, "RW",  0,  2'h0,  1,     1,   0);
+      IRQ_EN.configure   (this,  1,   3, "RW",  0,  1'b0,  1,     1,   0);
+      PRESCALER.configure(this,  8,   8, "RW",  0,  8'h01, 1,     1,   1);
+    endfunction
+  endclass
+
+  // ------------------------------------------------------------ STATUS @ 0x04
+  class status_reg extends uvm_reg;
+    `uvm_object_utils(status_reg)
+    uvm_reg_field BUSY;
+    uvm_reg_field DONE;
+    uvm_reg_field ERR_CNT;
+
+    function new(string name = "status_reg");
+      super.new(name, 32, UVM_NO_COVERAGE);
+    endfunction
+
+    virtual function void build();
+      BUSY    = uvm_reg_field::type_id::create("BUSY");
+      DONE    = uvm_reg_field::type_id::create("DONE");
+      ERR_CNT = uvm_reg_field::type_id::create("ERR_CNT");
+      BUSY.configure   (this, 1, 0, "RO", 1, 1'b0, 1, 0, 0);
+      DONE.configure   (this, 1, 1, "RO", 1, 1'b0, 1, 0, 0);
+      ERR_CNT.configure(this, 8, 4, "RO", 1, 8'h0, 1, 0, 0);
+    endfunction
+  endclass
+
+  // ------------------------------------------------------------ INT_STAT @ 0x08
+  class int_stat_reg extends uvm_reg;
+    `uvm_object_utils(int_stat_reg)
+    uvm_reg_field DONE_IRQ;
+    uvm_reg_field ERR_IRQ;
+
+    function new(string name = "int_stat_reg");
+      super.new(name, 32, UVM_NO_COVERAGE);
+    endfunction
+
+    virtual function void build();
+      DONE_IRQ = uvm_reg_field::type_id::create("DONE_IRQ");
+      ERR_IRQ  = uvm_reg_field::type_id::create("ERR_IRQ");
+      DONE_IRQ.configure(this, 1, 0, "W1C", 1, 1'b0, 1, 0, 0);
+      ERR_IRQ.configure (this, 1, 1, "W1C", 1, 1'b0, 1, 0, 0);
+    endfunction
+  endclass
+
+  // ------------------------------------------------------------ CMD @ 0x0C
+  class cmd_reg extends uvm_reg;
+    `uvm_object_utils(cmd_reg)
+    rand uvm_reg_field OPCODE;
+
+    function new(string name = "cmd_reg");
+      super.new(name, 32, UVM_NO_COVERAGE);
+    endfunction
+
+    virtual function void build();
+      OPCODE = uvm_reg_field::type_id::create("OPCODE");
+      OPCODE.configure(this, 4, 0, "WO", 0, 4'h0, 1, 1, 0);
+    endfunction
+  endclass
+
+  // ------------------------------------------------------------ SCRATCH @ 0x10
+  class scratch_reg extends uvm_reg;
+    `uvm_object_utils(scratch_reg)
+    rand uvm_reg_field DATA;
+
+    function new(string name = "scratch_reg");
+      super.new(name, 32, UVM_NO_COVERAGE);
+    endfunction
+
+    virtual function void build();
+      DATA = uvm_reg_field::type_id::create("DATA");
+      DATA.configure(this, 32, 0, "RW", 0, 32'h0, 1, 1, 1);
+    endfunction
+  endclass
+
+  // ------------------------------------------------------------ ID @ 0x14
+  class id_reg extends uvm_reg;
+    `uvm_object_utils(id_reg)
+    uvm_reg_field VALUE;
+
+    function new(string name = "id_reg");
+      super.new(name, 32, UVM_NO_COVERAGE);
+    endfunction
+
+    virtual function void build();
+      VALUE = uvm_reg_field::type_id::create("VALUE");
+      VALUE.configure(this, 32, 0, "RO", 0, 32'h5A5A_0001, 1, 0, 0);
+    endfunction
+  endclass
+
+  // ------------------------------------------------------------ BUF @ 0x80
+  class buf_mem extends uvm_mem;
+    `uvm_object_utils(buf_mem)
+    function new(string name = "buf_mem");
+      super.new(name, 32, 32, "RW", UVM_NO_COVERAGE);
+    endfunction
+  endclass
+
+  // ------------------------------------------------------------ Bloque
+  class regmem_reg_block extends uvm_reg_block;
+    `uvm_object_utils(regmem_reg_block)
+    rand ctrl_reg     CTRL;
+    rand status_reg   STATUS;
+    rand int_stat_reg INT_STAT;
+    rand cmd_reg      CMD;
+    rand scratch_reg  SCRATCH;
+    rand id_reg       ID;
+    buf_mem           BUF;
+
+    function new(string name = "regmem_reg_block");
+      super.new(name, UVM_NO_COVERAGE);
+    endfunction
+
+    virtual function void build();
+      // ---- Registros: crear, configurar, construir, rutas HDL
+      CTRL = ctrl_reg::type_id::create("CTRL");
+      CTRL.configure(this, null, "");
+      CTRL.build();
+      CTRL.add_hdl_path_slice("en_q",     0, 1);
+      CTRL.add_hdl_path_slice("mode_q",   1, 2);
+      CTRL.add_hdl_path_slice("irq_en_q", 3, 1);
+      CTRL.add_hdl_path_slice("presc_q",  8, 8);
+
+      STATUS = status_reg::type_id::create("STATUS");
+      STATUS.configure(this, null, "");
+      STATUS.build();
+      STATUS.add_hdl_path_slice("busy_q",    0, 1);
+      STATUS.add_hdl_path_slice("done_q",    1, 1);
+      STATUS.add_hdl_path_slice("err_cnt_q", 4, 8);
+
+      INT_STAT = int_stat_reg::type_id::create("INT_STAT");
+      INT_STAT.configure(this, null, "");
+      INT_STAT.build();
+      INT_STAT.add_hdl_path_slice("int_stat_q", 0, 2);
+
+      CMD = cmd_reg::type_id::create("CMD");
+      CMD.configure(this, null, "");          // sin ruta HDL: no tiene almacenamiento
+      CMD.build();
+
+      SCRATCH = scratch_reg::type_id::create("SCRATCH");
+      SCRATCH.configure(this, null, "scratch_q");   // ruta que cubre todo el registro
+      SCRATCH.build();
+
+      ID = id_reg::type_id::create("ID");
+      ID.configure(this, null, "id_w");
+      ID.build();
+
+      // ---- Memoria
+      BUF = buf_mem::type_id::create("BUF");
+      BUF.configure(this, "mem");
+
+      // ---- Mapa: base 0, bus de 4 bytes, little endian, direcciones en bytes
+      default_map = create_map("default_map", 'h0, 4, UVM_LITTLE_ENDIAN, 1);
+      default_map.add_reg(CTRL,     'h00, "RW");
+      default_map.add_reg(STATUS,   'h04, "RO");
+      default_map.add_reg(INT_STAT, 'h08, "RW");
+      default_map.add_reg(CMD,      'h0C, "RW");
+      default_map.add_reg(SCRATCH,  'h10, "RW");
+      default_map.add_reg(ID,       'h14, "RO");
+      default_map.add_mem(BUF,      'h80, "RW");
+    endfunction
+  endclass
+endpackage</code></pre>
+
+<p>Notas sobre el código:</p>
+<ul>
+  <li><code>PRESCALER</code> y <code>DATA</code> son <em>individualmente accesibles</em> porque ocupan bytes completos (bits 15:8 y 31:0); los campos de un bit no lo son.</li>
+  <li><code>CMD</code> se coloca con derechos <code>"RW"</code> en el mapa para poder estudiar en la Sección 10 qué hace el modelo al leer un campo WO; en un proyecto real podrías usar <code>"WO"</code>.</li>
+  <li>Las rutas de <code>add_hdl_path_slice</code> son relativas al bloque. La raíz (<code>tb_top.dut</code>) se fija desde el env.</li>
+</ul>
+
+<div class="check">
+<p><strong>Punto de control.</strong> Antes de seguir, comprueba que el modelo compila y está bien construido con este test mínimo (añádelo temporalmente a un paquete que importe <code>regmem_ral_pkg</code>):</p>
+<pre><code class="language-verilog">class model_check_test extends uvm_test;
+  `uvm_component_utils(model_check_test)
+  regmem_ral_pkg::regmem_reg_block rm;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void build_phase(uvm_phase phase);
+    rm = regmem_ral_pkg::regmem_reg_block::type_id::create("rm");
+    rm.build();
+    rm.lock_model();
+    rm.reset();
+  endfunction
+  function void end_of_elaboration_phase(uvm_phase phase);
+    uvm_reg regs[$];
+    rm.get_registers(regs);
+    foreach (regs[i])
+      `uvm_info("MODEL", $sformatf("%-10s addr=0x%02h reset=0x%08h",
+                regs[i].get_name(), regs[i].get_address(), regs[i].get_reset()), UVM_LOW)
+    `uvm_info("MODEL", $sformatf("Registro en 0x10: %s",
+              rm.default_map.get_reg_by_offset('h10).get_name()), UVM_LOW)
+    `uvm_info("MODEL", $sformatf("BUF: %0d palabras desde 0x%02h",
+              rm.BUF.get_size(), rm.BUF.get_address(0)), UVM_LOW)
+  endfunction
+endclass</code></pre>
+<p>Debes ver los seis registros con sus direcciones (0x00 a 0x14) y sus resets (<code>CTRL</code> = 0x00000100, <code>ID</code> = 0x5A5A0001, el resto 0), que el registro en 0x10 es <code>SCRATCH</code>, y que <code>BUF</code> tiene 32 palabras desde 0x80.</p>
+</div>
+
+<details class="solution">
+<summary>Ejercicio: ¿por qué el reset de CTRL es 0x00000100?</summary>
+<div class="body">
+<p>El valor de reset de un registro se compone con los resets de sus campos colocados en su posición: <code>PRESCALER</code> = 0x01 en los bits 15:8 da 0x0100, y el resto de campos tienen reset 0.</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 8 -->
+<section id="s8">
+<h2>8. Adaptador y predictor</h2>
+<p>El modelo habla en operaciones de registro (escribir 0x305 en la dirección 0x00); el agente habla en items APB. El adaptador traduce en ambos sentidos, y el predictor usa esa traducción para mantener el espejo al día con todo lo que pasa por el bus.</p>
+
+<h3>8.1 Teoría: el adaptador</h3>
+<p>Cuando una secuencia llama a <code>rm.CTRL.write(...)</code>, el mapa calcula la dirección y divide el acceso si hace falta. Por cada acceso al bus construye una estructura <code>uvm_reg_bus_op</code> y llama a <code>adapter.reg2bus()</code> para obtener un item del bus, que lanza en el secuenciador del agente. Cuando el driver termina, llama a <code>adapter.bus2reg()</code> para recuperar el dato y el estado.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Campo de <code>uvm_reg_bus_op</code></th><th>Significado</th></tr></thead>
+<tbody>
+<tr><td><code>kind</code></td><td><code>UVM_READ</code> o <code>UVM_WRITE</code></td></tr>
+<tr><td><code>addr</code></td><td>Dirección de bus ya calculada por el mapa</td></tr>
+<tr><td><code>data</code></td><td>Dato a escribir o dato leído</td></tr>
+<tr><td><code>n_bits</code></td><td>Número de bits del acceso</td></tr>
+<tr><td><code>byte_en</code></td><td>Byte enables, si el adaptador los admite</td></tr>
+<tr><td><code>status</code></td><td><code>UVM_IS_OK</code>, <code>UVM_NOT_OK</code> o <code>UVM_HAS_X</code>; lo rellena <code>bus2reg</code></td></tr>
+</tbody></table></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Propiedad del adaptador</th><th>Significado</th></tr></thead>
+<tbody>
+<tr><td><code>supports_byte_enable</code></td><td>1 si el bus admite escrituras parciales; permite escribir campos individuales sin tocar el resto</td></tr>
+<tr><td><code>provides_responses</code></td><td>1 si el driver devuelve una respuesta separada (<code>put_response</code>/<code>item_done(rsp)</code>); el mapa la esperará con <code>get_response</code>. 0 si el driver deja el resultado en el propio item</td></tr>
+<tr><td><code>get_item()</code></td><td>Dentro de <code>reg2bus</code>, devuelve el <code>uvm_reg_item</code> original, por si el item del bus necesita más información (prioridad, extensiones)</td></tr>
+</tbody></table></div>
+<p>Importancia: el adaptador es el único código del RAL que depende del bus. Cambiar el periférico de APB a AXI solo requiere otro adaptador; el modelo y todas las secuencias de registros siguen igual. Un error en <code>provides_responses</code> es una causa clásica de bloqueo: si vale 1 pero el driver no envía respuestas, el mapa espera indefinidamente.</p>
+
+<h3>8.2 Implementación del adaptador</h3>
+<pre><code class="language-verilog">class apb_reg_adapter extends uvm_reg_adapter;
+  `uvm_object_utils(apb_reg_adapter)
+
+  function new(string name = "apb_reg_adapter");
+    super.new(name);
+    supports_byte_enable = 0;   // APB3 no tiene byte enables
+    provides_responses   = 0;   // el driver escribe el dato leído en el propio item
+  endfunction
+
+  // Modelo -> bus
+  virtual function uvm_sequence_item reg2bus(const ref uvm_reg_bus_op rw);
+    apb_item item = apb_item::type_id::create("item");
+    item.write = (rw.kind == UVM_WRITE);
+    item.addr  = rw.addr;
+    item.data  = (rw.kind == UVM_WRITE) ? rw.data : 32'h0;
+    `uvm_info("ADAPT", {"reg2bus: ", item.convert2string()}, UVM_HIGH)
+    return item;
+  endfunction
+
+  // Bus -> modelo (lo usan el mapa, tras cada acceso, y el predictor)
+  virtual function void bus2reg(uvm_sequence_item bus_item, ref uvm_reg_bus_op rw);
+    apb_item item;
+    if (!$cast(item, bus_item)) begin
+      `uvm_fatal("ADAPT", "bus2reg recibió un item que no es apb_item")
+      return;
+    end
+    rw.kind   = item.write ? UVM_WRITE : UVM_READ;
+    rw.addr   = item.addr;
+    rw.data   = item.data;
+    rw.n_bits = 32;
+    rw.byte_en = '1;
+    rw.status = UVM_IS_OK;      // con PSLVERR: item.slverr ? UVM_NOT_OK : UVM_IS_OK
+  endfunction
+endclass</code></pre>
+
+<h3>8.3 Teoría: el predictor</h3>
+<p>Después de cada acceso, el espejo debe reflejar el nuevo valor del DUT según la política de cada campo (escribir 1 en un campo W1C lo deja a 0; leer un campo RC lo borra). Ese cálculo se llama <em>predicción</em>, y UVM ofrece tres formas de hacerla:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Modo</th><th>Cómo funciona</th><th>Ventajas</th><th>Limitaciones</th></tr></thead>
+<tbody>
+<tr><td><strong>Implícito</strong> (<code>set_auto_predict(1)</code>)</td><td>El mapa predice al terminar cada acceso hecho a través del modelo</td><td>No necesita monitor ni predictor; útil para empezar</td><td>No ve los accesos que no pasan por el modelo: otros masters, secuencias crudas, el firmware de un procesador</td></tr>
+<tr><td><strong>Explícito</strong> (<code>uvm_reg_predictor</code>, recomendado)</td><td>Un componente recibe del monitor cada transacción del bus, la traduce con <code>bus2reg</code>, busca el registro por dirección y predice</td><td>El espejo refleja todo lo que realmente pasó por el bus, venga de donde venga</td><td>Necesita monitor y conexión; el espejo se actualiza cuando el monitor publica (al final de la transferencia)</td></tr>
+<tr><td><strong>Pasivo</strong></td><td>Solo predictor explícito, sin secuenciador en el mapa (el entorno no inicia accesos)</td><td>Permite comprobar registros en un entorno donde otro agente (un CPU) programa el DUT</td><td>No se pueden hacer accesos frontdoor desde el modelo</td></tr>
+</tbody></table></div>
+<p>El predictor explícito hace, por cada transacción observada:</p>
+<ol>
+  <li><code>adapter.bus2reg(tr, rw)</code> para obtener dirección, dato y tipo.</li>
+  <li><code>map.get_reg_by_offset(rw.addr)</code> (o <code>get_mem_by_offset</code>) para encontrar el registro. Por eso hace falta <code>lock_model()</code>.</li>
+  <li><code>reg.do_predict(...)</code> con <code>UVM_PREDICT_WRITE</code> o <code>UVM_PREDICT_READ</code>: cada campo calcula su nuevo espejo según su política.</li>
+  <li>Publica la operación por su puerto <code>reg_ap</code>, por si un scoreboard de registros la necesita.</li>
+</ol>
+<p>Importancia: sin predicción correcta, el espejo se desvía del DUT; <code>mirror(UVM_CHECK)</code> da falsos errores, <code>update()</code> escribe cuando no debe o deja de escribir cuando debe, y las secuencias que dependen de <code>get_mirrored_value()</code> toman decisiones equivocadas. No uses los dos modos a la vez: cada acceso se predeciría dos veces.</p>
+
+<h3>8.4 Integración en el env</h3>
+<p class="file"><code>regmem_env_pkg.sv</code> (primera parte)</p>
+<pre><code class="language-verilog">`timescale 1ns/1ps
+package regmem_env_pkg;
+  import uvm_pkg::*;
+  `include "uvm_macros.svh"
+  import apb_pkg::*;
+  import regmem_ral_pkg::*;
+
+  // apb_reg_adapter (Sección 8.2) va aquí
+
+  class regmem_env extends uvm_env;
+    `uvm_component_utils(regmem_env)
+    apb_agent                     agt;
+    regmem_reg_block              rm;
+    apb_reg_adapter               adapter;
+    uvm_reg_predictor #(apb_item) predictor;
+
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+    function void build_phase(uvm_phase phase);
+      agt = apb_agent::type_id::create("agt", this);
+      // El test puede pasar un modelo ya construido; si no, lo construimos aquí
+      if (!uvm_config_db #(regmem_reg_block)::get(this, "", "rm", rm)) begin
+        rm = regmem_reg_block::type_id::create("rm");
+        rm.build();
+        rm.set_hdl_path_root("tb_top.dut");
+        rm.lock_model();
+        rm.reset();
+      end
+      adapter   = apb_reg_adapter::type_id::create("adapter");
+      predictor = uvm_reg_predictor #(apb_item)::type_id::create("predictor", this);
+    endfunction
+
+    function void connect_phase(uvm_phase phase);
+      // Frontdoor: el mapa usa el secuenciador del agente a través del adaptador
+      rm.default_map.set_sequencer(agt.sqr, adapter);
+      // Predicción explícita
+      rm.default_map.set_auto_predict(0);
+      predictor.map     = rm.default_map;
+      predictor.adapter = adapter;
+      agt.mon.ap.connect(predictor.bus_in);
+    endfunction
+  endclass
+
+  // Secuencias y tests (Secciones 10 y 11) van aquí
+endpackage</code></pre>
+
+<h3>8.5 Experimento: implícito frente a explícito</h3>
+<p>Este test escribe <code>SCRATCH</code> con una secuencia APB cruda, que no pasa por el modelo, y después comprueba el espejo.</p>
+<pre><code class="language-verilog">class predictor_test extends uvm_test;
+  `uvm_component_utils(predictor_test)
+  regmem_env env;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void build_phase(uvm_phase phase);
+    env = regmem_env::type_id::create("env", this);
+  endfunction
+  task run_phase(uvm_phase phase);
+    apb_raw_write_seq raw = apb_raw_write_seq::type_id::create("raw");
+    uvm_status_e status;
+    phase.raise_objection(this);
+    raw.addr = 'h10;
+    raw.data = 32'h1234_5678;
+    raw.start(env.agt.sqr);
+    #10ns;   // margen para que el monitor publique
+    `uvm_info("PRED", $sformatf("Espejo de SCRATCH: 0x%08h", env.rm.SCRATCH.get_mirrored_value()), UVM_LOW)
+    env.rm.SCRATCH.mirror(status, UVM_CHECK);
+    phase.drop_objection(this);
+  endtask
+endclass</code></pre>
+<ol>
+  <li>Ejecútalo tal cual (predictor explícito).</li>
+  <li>Cámbialo a predicción implícita: en <code>connect_phase</code> del env usa <code>set_auto_predict(1)</code> y comenta la conexión <code>agt.mon.ap.connect(predictor.bus_in)</code>. Vuelve a ejecutar.</li>
+</ol>
+
+<details class="solution">
+<summary>Resultado del experimento</summary>
+<div class="body">
+<ul>
+  <li><strong>Explícito</strong>: el espejo vale 0x12345678 y <code>mirror(UVM_CHECK)</code> pasa. El predictor vio la escritura en el monitor, aunque no la hizo el modelo.</li>
+  <li><strong>Implícito</strong>: el espejo sigue en 0 (valor de reset) y <code>mirror(UVM_CHECK)</code> informa un <code>UVM_ERROR</code>: el valor leído (0x12345678) no coincide con el espejo (0). Después del <code>mirror</code>, el espejo se actualiza al valor leído.</li>
+</ul>
+<p>Moraleja: cualquier entorno donde algo más que el modelo toque los registros necesita predicción explícita.</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 9 -->
+<section id="s9">
+<h2>9. El backdoor</h2>
+<p>Un acceso por backdoor lee o escribe directamente el almacenamiento del DUT (los flip-flops o el array de memoria) a través de la jerarquía de la simulación, sin usar el bus. No consume tiempo de simulación ni ciclos de bus.</p>
+
+<h3>9.1 Teoría: cómo funciona</h3>
+<ul>
+  <li>UVM incluye funciones DPI-C (<code>uvm_hdl_read</code>, <code>uvm_hdl_deposit</code>, <code>uvm_hdl_force</code>, <code>uvm_hdl_release</code>, <code>uvm_hdl_check_path</code>) que acceden a una señal a partir de su ruta como cadena de texto, usando la interfaz VPI del simulador.</li>
+  <li>Cada registro y memoria del modelo puede tener una o varias rutas HDL. La ruta completa se forma concatenando: raíz del bloque superior (<code>set_hdl_path_root</code>), rutas de los bloques intermedios (<code>configure(parent, "u_sub")</code>) y la ruta del registro (o de cada trozo).</li>
+  <li>Si un registro está repartido en varias señales, cada trozo se declara con <code>add_hdl_path_slice(nombre, offset, tamaño)</code>; UVM lee o escribe cada trozo y monta el valor. Los bits sin trozo se leen como 0.</li>
+  <li>Las memorias tienen una sola ruta al array; UVM añade <code>[índice]</code> en cada acceso.</li>
+  <li>Se pueden definir varios conjuntos de rutas con distinto <em>kind</em> (por defecto <code>"RTL"</code>; por ejemplo, <code>"GATES"</code> para la netlist) y elegir con cuál se trabaja con <code>set_default_hdl_path()</code>.</li>
+</ul>
+<p><strong>Por qué es importante</strong></p>
+<ul>
+  <li><strong>Velocidad</strong>: inicializar una memoria de un millón de palabras por el bus puede llevar horas de simulación; por backdoor es inmediato.</li>
+  <li><strong>Aislamiento de errores</strong>: escribir por frontdoor y leer por backdoor (o al revés) separa un fallo en el camino de escritura de un fallo en el de lectura.</li>
+  <li><strong>Acceso a lo que el bus no alcanza</strong>: preparar estados difíciles de provocar, o leer campos sin efectos secundarios (leer un campo RC por backdoor con <code>peek</code> no lo borra).</li>
+  <li><strong>Comprobación de rutas</strong>: las propias rutas HDL validan que el modelo y el RTL describen lo mismo.</li>
+</ul>
+<p><strong>Limitaciones</strong>: el backdoor no comprueba la lógica del bus ni la decodificación de direcciones; una escritura por backdoor no dispara los efectos secundarios que el hardware asocia a un acceso real (en <code>CMD</code>, escribir por backdoor no lanzaría la operación); y depende de que los nombres internos del RTL no cambien, sobre todo tras síntesis.</p>
+
+<h3>9.2 Dos formas de escribir por backdoor</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Operación</th><th>Respeta la política de acceso</th><th>Ejemplo con un campo W1C que vale 1</th></tr></thead>
+<tbody>
+<tr><td><code>write(..., UVM_BACKDOOR)</code> / <code>read(..., UVM_BACKDOOR)</code></td><td>Sí: UVM emula el efecto que tendría un acceso por el bus (lee, aplica la política, deposita)</td><td>Escribir 1 deja el campo a 0, como haría el hardware</td></tr>
+<tr><td><code>poke()</code> / <code>peek()</code></td><td>No: escribe o lee el valor crudo</td><td>Escribir 1 lo deja a 1; leer no tiene efectos secundarios</td></tr>
+</tbody></table></div>
+<p>Ambas actualizan el espejo con el resultado.</p>
+
+<h3>9.3 Implementación con rutas HDL</h3>
+<p>Las rutas ya están en el modelo (Sección 7.2) y la raíz en el env (<code>rm.set_hdl_path_root("tb_top.dut")</code>). Lo que falta es compilar dando acceso de lectura y escritura a la jerarquía:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Simulador</th><th>Opciones típicas</th></tr></thead>
+<tbody>
+<tr><td>Questa</td><td><code>vlog +acc ...</code> o <code>vopt +acc</code>; <code>vsim -voptargs=+acc</code></td></tr>
+<tr><td>VCS</td><td><code>-debug_access+all</code> (o, más restringido, <code>-debug_access+r+w</code>)</td></tr>
+<tr><td>Xcelium</td><td><code>-access +rwc</code></td></tr>
+<tr><td>Riviera-PRO</td><td><code>+access +r+w</code></td></tr>
+</tbody></table></div>
+<p>Además, UVM no debe compilarse con <code>UVM_HDL_NO_DPI</code> definido, y los registros más anchos que <code>UVM_HDL_MAX_WIDTH</code> (1024 por defecto) necesitan redefinirlo. Si falta el acceso, verás errores de UVM indicando que no puede leer o depositar en la ruta, y las lecturas por backdoor devolverán 0.</p>
+
+<h4>Comprobar las rutas</h4>
+<p>UVM trae una secuencia que verifica que todas las rutas HDL del modelo existen:</p>
+<pre><code class="language-verilog">uvm_reg_mem_hdl_paths_seq paths_seq = uvm_reg_mem_hdl_paths_seq::type_id::create("paths_seq");
+paths_seq.model = env.rm;
+paths_seq.start(null);</code></pre>
+<p>Ejecútala siempre al integrar un modelo nuevo; una errata en una ruta aparecerá como error aquí en lugar de como un fallo misterioso más tarde.</p>
+
+<h3>9.4 Implementación de un backdoor de usuario</h3>
+<p>Cuando no se puede usar DPI (por política del proyecto, por rendimiento o porque el almacenamiento no es una señal simple, como un registro codificado o una memoria con ECC), se escribe una clase derivada de <code>uvm_reg_backdoor</code> que accede al DUT por referencias jerárquicas de SystemVerilog. El truco es declararla <strong>dentro de un módulo</strong>: las clases declaradas en un módulo pueden usar referencias jerárquicas, cosa que las clases de un paquete no pueden.</p>
+<p>Añade a <code>tb_top.sv</code>, dentro del módulo y antes del bloque <code>initial</code>:</p>
+<pre><code class="language-verilog">  // Backdoor de usuario para SCRATCH, por referencia jerárquica
+  class scratch_bkdr extends uvm_reg_backdoor;
+    function new(string name = "scratch_bkdr"); super.new(name); endfunction
+
+    virtual task write(uvm_reg_item rw);
+      do_pre_write(rw);                          // callbacks de usuario
+      dut.scratch_q = rw.value[0][31:0];
+      rw.status = UVM_IS_OK;
+      `uvm_info("BKDR", $sformatf("write SCRATCH = 0x%08h", rw.value[0]), UVM_HIGH)
+      do_post_write(rw);
+    endtask
+
+    virtual task read(uvm_reg_item rw);
+      do_pre_read(rw);
+      rw.value[0] = dut.scratch_q;
+      rw.status   = UVM_IS_OK;
+      `uvm_info("BKDR", $sformatf("read SCRATCH = 0x%08h", rw.value[0]), UVM_HIGH)
+      do_post_read(rw);
+    endtask
+  endclass
+
+  scratch_bkdr bk_scratch = new("bk_scratch");</code></pre>
+<p>Y en el bloque <code>initial</code>, antes de <code>run_test()</code>, pásalo al env:</p>
+<pre><code class="language-verilog">    uvm_config_db #(uvm_reg_backdoor)::set(null, "uvm_test_top.env", "scratch_bkdr", bk_scratch);</code></pre>
+<p>En <code>regmem_env::connect_phase</code>, asígnalo al registro si existe:</p>
+<pre><code class="language-verilog">      begin
+        uvm_reg_backdoor bk;
+        if (uvm_config_db #(uvm_reg_backdoor)::get(this, "", "scratch_bkdr", bk))
+          rm.SCRATCH.set_backdoor(bk);
+      end</code></pre>
+<ul>
+  <li>Un backdoor de usuario tiene prioridad sobre las rutas HDL del registro. También se puede asignar a un bloque entero o a una memoria (<code>uvm_mem::set_backdoor</code>).</li>
+  <li><code>rw.value</code> es un array dinámico porque las memorias pueden acceder a varias palabras (ráfagas); para un registro se usa <code>rw.value[0]</code>.</li>
+  <li><code>do_pre_*</code>/<code>do_post_*</code> ejecutan los callbacks del backdoor (por ejemplo, <code>encode</code>/<code>decode</code> para una memoria con ECC o cifrada).</li>
+  <li>Un backdoor también puede detectar cambios del hardware: sobrescribiendo <code>is_auto_updated()</code> y <code>wait_for_change()</code>, el modelo actualiza el espejo de campos volátiles automáticamente cuando la señal cambia.</li>
+</ul>
+<p>Con <code>+UVM_VERBOSITY=UVM_HIGH</code>, los accesos por backdoor a <code>SCRATCH</code> mostrarán los mensajes <code>BKDR</code>, prueba de que se usa tu clase y no el DPI.</p>
+</section>
+
+<!-- ===================================================== 10 -->
+<section id="s10">
+<h2>10. Tutorial de accesos frontdoor y backdoor</h2>
+<p>Ahora que el entorno está completo, recorreremos todas las formas de acceder a registros y memorias en nueve pasos. Cada paso es una secuencia de registros; un único test elige cuál ejecutar con un argumento de línea de comandos.</p>
+
+<h3>10.1 Infraestructura: secuencia base y test</h3>
+<p>Añade a <code>regmem_env_pkg.sv</code>, tras el env:</p>
+<pre><code class="language-verilog">  // Secuencia base: obtiene el modelo con su tipo concreto
+  class regmem_base_seq extends uvm_reg_sequence;
+    `uvm_object_utils(regmem_base_seq)
+    regmem_reg_block rm;
+    uvm_status_e     status;
+    uvm_reg_data_t   value;
+    function new(string name = "regmem_base_seq"); super.new(name); endfunction
+
+    virtual task pre_start();
+      if (!$cast(rm, model)) `uvm_fatal("SEQ", "model no es un regmem_reg_block")
+    endtask
+
+    // Ayuda: comprueba el estado de cada acceso
+    function void check_ok(string what);
+      if (status != UVM_IS_OK) `uvm_error("SEQ", {what, ": status distinto de UVM_IS_OK"})
+    endfunction
+  endclass
+
+  // Test que ejecuta el paso indicado con +STEP=n
+  class ral_test extends uvm_test;
+    `uvm_component_utils(ral_test)
+    regmem_env env;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      env = regmem_env::type_id::create("env", this);
+    endfunction
+    task run_phase(uvm_phase phase);
+      int unsigned    step = 1;
+      uvm_object      obj;
+      regmem_base_seq seq;
+      void'($value$plusargs("STEP=%d", step));
+      obj = uvm_factory::get().create_object_by_name($sformatf("step%0d_seq", step), "", "seq");
+      if (obj == null || !$cast(seq, obj)) `uvm_fatal("TEST", $sformatf("No existe step%0d_seq", step))
+      seq.model = env.rm;
+      phase.raise_objection(this);
+      seq.start(null);           // una secuencia de registros puede correr sin secuenciador propio
+      #50ns;
+      phase.drop_objection(this);
+    endtask
+  endclass</code></pre>
+<p>Ejecuta cada paso con <code>+UVM_TESTNAME=ral_test +STEP=n</code>. Añade <code>+UVM_VERBOSITY=UVM_MEDIUM</code> (por defecto) para ver las transacciones APB del monitor, que indican cuándo un acceso ha ido por el bus.</p>
+<p>Firma de los accesos principales (todos los argumentos tras el valor son opcionales y se pasan por nombre):</p>
+<pre><code class="language-verilog">reg.write (status, value, .path(UVM_FRONTDOOR), .map(null), .parent(this));
+reg.read  (status, value, .path(UVM_FRONTDOOR), .map(null), .parent(this));
+reg.mirror(status, .check(UVM_NO_CHECK), .path(UVM_FRONTDOOR), .parent(this));
+reg.update(status, .path(UVM_FRONTDOOR), .parent(this));
+reg.peek  (status, value, .parent(this));
+reg.poke  (status, value, .parent(this));
+mem.write (status, offset, value, .path(UVM_FRONTDOOR), .parent(this));
+mem.read  (status, offset, value, .path(UVM_FRONTDOOR), .parent(this));</code></pre>
+<p>Pasar <code>.parent(this)</code> hace que los items del bus se lancen como hijos de tu secuencia: heredan su prioridad y aparecen bajo su nombre en el log.</p>
+
+<h3>Paso 1: escritura y lectura por frontdoor</h3>
+<pre><code class="language-verilog">  class step1_seq extends regmem_base_seq;
+    `uvm_object_utils(step1_seq)
+    function new(string name = "step1_seq"); super.new(name); endfunction
+    task body();
+      // EN = 1, MODE = 2, IRQ_EN = 0, PRESCALER = 3
+      rm.CTRL.write(status, 32'h0000_0305, .parent(this));
+      check_ok("write CTRL");
+      rm.CTRL.read(status, value, .parent(this));
+      check_ok("read CTRL");
+      `uvm_info("STEP1", $sformatf("CTRL leído = 0x%08h", value), UVM_LOW)
+      rm.ID.read(status, value, .parent(this));
+      `uvm_info("STEP1", $sformatf("ID leído   = 0x%08h", value), UVM_LOW)
+    endtask
+  endclass</code></pre>
+<div class="check">
+<p><strong>Qué observar.</strong> Tres transacciones APB: <code>W addr=0x00 data=0x00000305</code>, <code>R addr=0x00 data=0x00000305</code> y <code>R addr=0x14 data=0x5a5a0001</code>, cada una de 3 ciclos. La secuencia no ha escrito ninguna dirección: el mapa la ha calculado a partir del nombre del registro.</p>
+</div>
+
+<h3>Paso 2: el espejo y mirror</h3>
+<pre><code class="language-verilog">  class step2_seq extends regmem_base_seq;
+    `uvm_object_utils(step2_seq)
+    function new(string name = "step2_seq"); super.new(name); endfunction
+    task body();
+      rm.CTRL.write(status, 32'h0000_0305, .parent(this));
+      `uvm_info("STEP2", $sformatf("Espejo de CTRL: 0x%08h", rm.CTRL.get_mirrored_value()), UVM_LOW)
+      `uvm_info("STEP2", $sformatf("Espejo de MODE: %0d", rm.CTRL.MODE.get_mirrored_value()), UVM_LOW)
+
+      // Comprobación que pasa: el DUT coincide con el espejo
+      rm.CTRL.mirror(status, UVM_CHECK, .parent(this));
+
+      // El "hardware" cambia PRESCALER a espaldas del modelo
+      void'(uvm_hdl_deposit("tb_top.dut.presc_q", 8'h07));
+
+      // Comprobación que falla y actualiza el espejo
+      rm.CTRL.mirror(status, UVM_CHECK, .parent(this));
+      `uvm_info("STEP2", $sformatf("Espejo tras mirror: 0x%08h", rm.CTRL.get_mirrored_value()), UVM_LOW)
+    endtask
+  endclass</code></pre>
+<div class="check">
+<p><strong>Qué observar.</strong> El espejo vale 0x305 justo tras la escritura (lo puso el predictor al ver la transacción). El primer <code>mirror</code> lee 0x305 y no informa nada. El segundo lee 0x705 y produce un <code>UVM_ERROR</code> indicando que el valor leído no coincide con el espejo para el campo <code>PRESCALER</code>; después el espejo pasa a 0x705. <code>mirror(UVM_NO_CHECK)</code> haría la lectura y la actualización sin comprobar.</p>
+</div>
+
+<h3>Paso 3: backdoor, peek y poke</h3>
+<pre><code class="language-verilog">  class step3_seq extends regmem_base_seq;
+    `uvm_object_utils(step3_seq)
+    function new(string name = "step3_seq"); super.new(name); endfunction
+    task body();
+      // a) Escritura por backdoor, lectura por frontdoor
+      rm.SCRATCH.write(status, 32'hCAFE_F00D, UVM_BACKDOOR, .parent(this));
+      rm.SCRATCH.read (status, value, UVM_FRONTDOOR, .parent(this));
+      `uvm_info("STEP3", $sformatf("a) SCRATCH por frontdoor = 0x%08h", value), UVM_LOW)
+
+      // b) Escritura por frontdoor, lectura por backdoor
+      rm.CTRL.write(status, 32'h0000_0A0B, .parent(this));
+      rm.CTRL.read (status, value, UVM_BACKDOOR, .parent(this));
+      `uvm_info("STEP3", $sformatf("b) CTRL por backdoor = 0x%08h", value), UVM_LOW)
+
+      // c) poke frente a write por backdoor en un registro W1C
+      rm.INT_STAT.poke(status, 32'h3, .parent(this));                  // valor crudo: ambos flags a 1
+      rm.INT_STAT.write(status, 32'h1, UVM_BACKDOOR, .parent(this));   // emula W1C: borra DONE_IRQ
+      rm.INT_STAT.peek(status, value, .parent(this));
+      `uvm_info("STEP3", $sformatf("c) INT_STAT tras write backdoor = 0x%0h", value), UVM_LOW)
+      rm.INT_STAT.poke(status, 32'h1, .parent(this));                  // valor crudo
+      rm.INT_STAT.peek(status, value, .parent(this));
+      `uvm_info("STEP3", $sformatf("c) INT_STAT tras poke 1        = 0x%0h", value), UVM_LOW)
+
+      // d) Backdoor imposible: CMD no tiene ruta HDL
+      rm.CMD.read(status, value, UVM_BACKDOOR, .parent(this));
+      `uvm_info("STEP3", $sformatf("d) status de CMD por backdoor = %s", status.name()), UVM_LOW)
+    endtask
+  endclass</code></pre>
+<div class="check">
+<p><strong>Qué observar.</strong></p>
+<ul>
+  <li>a) Lee 0xCAFEF00D. Solo hay una transacción APB (la lectura): la escritura por backdoor no aparece en el bus y ocurre en tiempo cero.</li>
+  <li>b) Lee 0x00000A0B: hay una escritura APB y ninguna lectura APB.</li>
+  <li>c) Tras <code>poke(3)</code> y <code>write(1, UVM_BACKDOOR)</code>, <code>INT_STAT</code> vale 0x2: el modelo emuló la política W1C. Tras <code>poke(1)</code> vale 0x1: el valor se escribió tal cual.</li>
+  <li>d) <code>UVM_ERROR</code> indicando que el registro no tiene acceso por backdoor (ni backdoor de usuario ni ruta HDL), y <code>status = UVM_NOT_OK</code>.</li>
+  <li>Si añadiste el backdoor de usuario (Sección 9.4) y usas <code>+UVM_VERBOSITY=UVM_HIGH</code>, el apartado a) muestra los mensajes <code>BKDR</code>.</li>
+</ul>
+</div>
+
+<h3>Paso 4: valor deseado, set, randomize y update</h3>
+<pre><code class="language-verilog">  class step4_seq extends regmem_base_seq;
+    `uvm_object_utils(step4_seq)
+    function new(string name = "step4_seq"); super.new(name); endfunction
+    task body();
+      // a) Cambiar el valor deseado campo a campo y escribir solo si hace falta
+      rm.CTRL.EN.set(1);
+      rm.CTRL.MODE.set(3);
+      rm.CTRL.PRESCALER.set(8'h10);
+      `uvm_info("STEP4", $sformatf("deseado=0x%08h espejo=0x%08h needs_update=%0d",
+                rm.CTRL.get(), rm.CTRL.get_mirrored_value(), rm.CTRL.needs_update()), UVM_LOW)
+      rm.CTRL.update(status, .parent(this));   // escribe 0x1007
+      rm.CTRL.update(status, .parent(this));   // ya coincide: no hace nada
+
+      // b) Aleatorizar respetando restricciones y actualizar
+      if (!rm.CTRL.randomize() with { MODE.value != 0; })
+        `uvm_error("STEP4", "randomize de CTRL falló")
+      rm.CTRL.update(status, .parent(this));
+      rm.CTRL.mirror(status, UVM_CHECK, .parent(this));
+
+      // c) Aleatorizar y actualizar todo el bloque
+      if (!rm.randomize()) `uvm_error("STEP4", "randomize del bloque falló")
+      rm.update(status, .parent(this));
+    endtask
+  endclass</code></pre>
+<div class="check">
+<p><strong>Qué observar.</strong> Antes del primer <code>update</code>: deseado 0x1007, espejo 0x0100, <code>needs_update = 1</code>. El primer <code>update</code> produce una escritura APB de 0x00001007; el segundo, ninguna. En b), el valor escrito tiene <code>MODE</code> distinto de 0 y <code>PRESCALER</code> distinto de 0 (restricción de la clase). En c), <code>update</code> escribe solo los registros cuyo deseado cambió; fíjate en que <code>CMD</code> también puede escribirse si su <code>OPCODE</code> aleatorio difiere del espejo (con <code>EN</code> a 1, eso lanzaría una operación). Por eso conviene excluir de la aleatorización los registros de comando (<code>rm.CMD.OPCODE.rand_mode(0)</code>).</p>
+</div>
+
+<h3>Paso 5: acceso a campos</h3>
+<pre><code class="language-verilog">  class step5_seq extends regmem_base_seq;
+    `uvm_object_utils(step5_seq)
+    function new(string name = "step5_seq"); super.new(name); endfunction
+    task body();
+      rm.CTRL.write(status, 32'h0000_0305, .parent(this));
+      // Escribir solo MODE: el bus no tiene byte enables y MODE no ocupa un byte completo
+      rm.CTRL.MODE.write(status, 2'b11, .parent(this));
+      rm.CTRL.read(status, value, .parent(this));
+      `uvm_info("STEP5", $sformatf("CTRL tras escribir MODE = 0x%08h", value), UVM_LOW)
+      // Leer un campo
+      rm.CTRL.PRESCALER.read(status, value, .parent(this));
+      `uvm_info("STEP5", $sformatf("PRESCALER = 0x%02h", value), UVM_LOW)
+    endtask
+  endclass</code></pre>
+<div class="check">
+<p><strong>Qué observar.</strong> <code>MODE.write</code> genera una escritura APB del registro completo, <code>0x00000307</code>: UVM avisa de que el campo no es accesible individualmente y escribe el registro entero, tomando el resto de campos del espejo. Leer un campo también lee el registro completo y extrae el campo (0x03). Por eso un espejo incorrecto puede corromper otros campos al escribir uno solo: otra razón para tener buena predicción.</p>
+</div>
+
+<h3>Paso 6: políticas de acceso en acción</h3>
+<pre><code class="language-verilog">  class step6_seq extends regmem_base_seq;
+    `uvm_object_utils(step6_seq)
+    function new(string name = "step6_seq"); super.new(name); endfunction
+    task body();
+      // Habilitar y lanzar una operación válida
+      rm.CTRL.write(status, 32'h0000_0101, .parent(this));
+      rm.CMD.write (status, 32'h1, .parent(this));
+      // Sondear BUSY (campo RO volátil)
+      do rm.STATUS.read(status, value, .parent(this));
+      while (value[0]);
+      `uvm_info("STEP6", $sformatf("STATUS = 0x%08h (DONE=%0d)", value, value[1]), UVM_LOW)
+
+      // Flag de interrupción y borrado W1C
+      rm.INT_STAT.read(status, value, .parent(this));
+      `uvm_info("STEP6", $sformatf("INT_STAT = 0x%0h", value), UVM_LOW)
+      rm.INT_STAT.write(status, 32'h1, .parent(this));
+      `uvm_info("STEP6", $sformatf("Espejo INT_STAT tras W1C = 0x%0h", rm.INT_STAT.get_mirrored_value()), UVM_LOW)
+      rm.INT_STAT.read(status, value, .parent(this));
+      `uvm_info("STEP6", $sformatf("INT_STAT leído = 0x%0h", value), UVM_LOW)
+
+      // Comando inválido: contador de errores
+      rm.CMD.write(status, 32'hF, .parent(this));
+      rm.STATUS.read(status, value, .parent(this));
+      `uvm_info("STEP6", $sformatf("ERR_CNT = %0d", rm.STATUS.ERR_CNT.get_mirrored_value()), UVM_LOW)
+
+      // Leer un registro WO y comprobar una constante
+      rm.CMD.read(status, value, .parent(this));
+      `uvm_info("STEP6", $sformatf("CMD leído = 0x%0h, espejo = 0x%0h", value, rm.CMD.get_mirrored_value()), UVM_LOW)
+      rm.ID.mirror(status, UVM_CHECK, .parent(this));
+    endtask
+  endclass</code></pre>
+<div class="check">
+<p><strong>Qué observar.</strong></p>
+<ul>
+  <li>El sondeo lee <code>STATUS</code> una o dos veces con <code>BUSY = 1</code> y termina con <code>STATUS = 0x00000002</code> (<code>DONE = 1</code>).</li>
+  <li><code>INT_STAT</code> vale 0x1. Tras escribir 1, el predictor aplica W1C y el espejo queda en 0; la lectura confirma 0.</li>
+  <li>Tras el comando 0xF, <code>ERR_CNT = 1</code> (el espejo de un campo volátil se actualiza al leerlo).</li>
+  <li>Al leer <code>CMD</code>, el DUT devuelve 0 y el espejo conserva 0xF (lo último escrito): la predicción de lectura no modifica un campo WO. UVM puede avisar de que se está leyendo un campo de solo escritura.</li>
+  <li>El <code>mirror(UVM_CHECK)</code> de <code>ID</code> pasa: el valor de reset del modelo coincide con la constante del DUT.</li>
+  <li>Reflexión: un <code>mirror(UVM_CHECK)</code> sobre <code>STATUS</code> o <code>INT_STAT</code> no comprobaría nada, porque sus campos son volátiles. Para comprobarlos, lee el valor y compáralo con lo que esperas según la operación.</li>
+</ul>
+</div>
+
+<h3>Paso 7: memoria por frontdoor y backdoor</h3>
+<pre><code class="language-verilog">  class step7_seq extends regmem_base_seq;
+    `uvm_object_utils(step7_seq)
+    function new(string name = "step7_seq"); super.new(name); endfunction
+    task body();
+      uvm_reg_data_t wr_data[] = '{32'h0000_0010, 32'h0000_0020, 32'h0000_0030, 32'h0000_0040};
+      uvm_reg_data_t rd_data[];
+
+      // a) Escritura frontdoor, lectura backdoor
+      rm.BUF.write(status, 5, 32'h1111_2222, .parent(this));
+      rm.BUF.read (status, 5, value, UVM_BACKDOOR, .parent(this));
+      `uvm_info("STEP7", $sformatf("a) BUF[5] por backdoor = 0x%08h", value), UVM_LOW)
+
+      // b) poke y lectura frontdoor
+      rm.BUF.poke(status, 6, 32'hDEAD_BEEF, .parent(this));
+      rm.BUF.read(status, 6, value, .parent(this));
+      `uvm_info("STEP7", $sformatf("b) BUF[6] por frontdoor = 0x%08h", value), UVM_LOW)
+
+      // c) Ráfagas
+      rm.BUF.burst_write(status, 8, wr_data, .parent(this));
+      rm.BUF.burst_read (status, 8, rd_data, .parent(this));
+      foreach (rd_data[i])
+        `uvm_info("STEP7", $sformatf("c) BUF[%0d] = 0x%08h", 8 + i, rd_data[i]), UVM_LOW)
+
+      // d) Inicializar toda la memoria por backdoor (instantáneo)
+      for (int i = 0; i &lt; rm.BUF.get_size(); i++)
+        rm.BUF.poke(status, i, 32'hA000_0000 + i, .parent(this));
+      rm.BUF.read(status, 31, value, .parent(this));
+      `uvm_info("STEP7", $sformatf("d) BUF[31] = 0x%08h", value), UVM_LOW)
+    endtask
+  endclass</code></pre>
+<div class="check">
+<p><strong>Qué observar.</strong></p>
+<ul>
+  <li>a) Una escritura APB a la dirección <code>0x94</code> (0x80 + 5·4) y la lectura por backdoor devuelve 0x11112222.</li>
+  <li>b) Una lectura APB en <code>0x98</code> que devuelve 0xDEADBEEF.</li>
+  <li>c) Como el adaptador no admite ráfagas, el mapa divide cada ráfaga en cuatro accesos sencillos a 0xA0, 0xA4, 0xA8 y 0xAC.</li>
+  <li>d) Las 32 escrituras ocurren en tiempo cero sin tráfico; solo aparece la lectura final, que devuelve 0xA000001F.</li>
+  <li>Recuerda: las memorias no tienen espejo; no existen <code>mirror</code>, <code>set</code> ni <code>update</code> para ellas. Si necesitas un modelo de referencia del contenido, mantenlo en el scoreboard.</li>
+</ul>
+</div>
+
+<h3>Paso 8: aislar un error con frontdoor y backdoor</h3>
+<p>Compila con <code>+define+BUG_SCRATCH</code>: el DUT pierde el bit 31 al escribir <code>SCRATCH</code>.</p>
+<pre><code class="language-verilog">  class step8_seq extends regmem_base_seq;
+    `uvm_object_utils(step8_seq)
+    function new(string name = "step8_seq"); super.new(name); endfunction
+    task body();
+      uvm_reg_data_t fd, bd;
+      // Prueba 1: escribir por el bus, mirar el almacenamiento
+      rm.SCRATCH.write(status, 32'h8000_0001, .parent(this));
+      rm.SCRATCH.peek(status, bd, .parent(this));
+      // Prueba 2: escribir el almacenamiento, leer por el bus
+      rm.SCRATCH.poke(status, 32'h8000_0001, .parent(this));
+      rm.SCRATCH.read(status, fd, .parent(this));
+      `uvm_info("STEP8", $sformatf("write bus -> peek = 0x%08h | poke -> read bus = 0x%08h", bd, fd), UVM_LOW)
+      if (bd != 32'h8000_0001 &amp;&amp; fd == 32'h8000_0001)
+        `uvm_error("STEP8", "Fallo en el camino de ESCRITURA del bus")
+      else if (bd == 32'h8000_0001 &amp;&amp; fd != 32'h8000_0001)
+        `uvm_error("STEP8", "Fallo en el camino de LECTURA del bus")
+    endtask
+  endclass</code></pre>
+<div class="check">
+<p><strong>Qué observar.</strong> Con el error inyectado, <code>peek</code> devuelve 0x00000001 y la lectura por bus devuelve 0x80000001: la secuencia diagnostica un fallo en el camino de escritura. Sin el error, ambos valen 0x80000001 y no hay mensaje. Con solo frontdoor habrías sabido que algo falla; con frontdoor y backdoor sabes dónde.</p>
+</div>
+
+<h3>Paso 9: predict y reset del modelo</h3>
+<pre><code class="language-verilog">  class step9_seq extends regmem_base_seq;
+    `uvm_object_utils(step9_seq)
+    function new(string name = "step9_seq"); super.new(name); endfunction
+    task body();
+      // predict(): informar al modelo de un cambio conocido sin acceder al DUT
+      void'(uvm_hdl_deposit("tb_top.dut.scratch_q", 32'h0000_BEEF));
+      void'(rm.SCRATCH.predict(32'h0000_BEEF));
+      rm.SCRATCH.mirror(status, UVM_CHECK, .parent(this));   // pasa: el modelo ya lo sabía
+
+      // reset(): tras un reset del DUT, el modelo debe volver a los valores de reset
+      rm.CTRL.write(status, 32'h0000_0F0F, .parent(this));
+      rm.reset();
+      `uvm_info("STEP9", $sformatf("Espejo de CTRL tras rm.reset() = 0x%08h", rm.CTRL.get_mirrored_value()), UVM_LOW)
+      rm.CTRL.mirror(status, UVM_CHECK, .parent(this));      // falla: el DUT no se ha reseteado
+    endtask
+  endclass</code></pre>
+<div class="check">
+<p><strong>Qué observar.</strong> El primer <code>mirror</code> pasa gracias a <code>predict()</code>. Tras <code>rm.reset()</code>, el espejo de <code>CTRL</code> vuelve a 0x00000100, pero el DUT sigue en 0x00000F0F, así que el segundo <code>mirror</code> informa un error. <code>rm.reset()</code> solo cambia el modelo; en un entorno real se llama cuando el monitor detecta que el DUT se ha reseteado.</p>
+</div>
+
+<h3>10.2 Resumen de operaciones</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Operación</th><th>Toca el DUT</th><th>Camino</th><th>Política</th><th>Efecto en el modelo</th></tr></thead>
+<tbody>
+<tr><td><code>write</code></td><td>Sí</td><td>Frontdoor o backdoor</td><td>Respeta (backdoor la emula)</td><td>Espejo y deseado predichos</td></tr>
+<tr><td><code>read</code></td><td>Sí</td><td>Frontdoor o backdoor</td><td>Respeta</td><td>Espejo predicho según la política de lectura</td></tr>
+<tr><td><code>peek</code> / <code>poke</code></td><td>Sí</td><td>Solo backdoor</td><td>Ignora</td><td>Espejo = valor leído o escrito</td></tr>
+<tr><td><code>set</code> / <code>get</code></td><td>No</td><td>—</td><td>—</td><td>Cambia o lee el deseado</td></tr>
+<tr><td><code>randomize</code></td><td>No</td><td>—</td><td>—</td><td>Deseado aleatorio, con restricciones</td></tr>
+<tr><td><code>update</code></td><td>Sí, si deseado ≠ espejo</td><td>Frontdoor o backdoor</td><td>Respeta</td><td>Escribe el deseado</td></tr>
+<tr><td><code>mirror</code></td><td>Sí (lectura)</td><td>Frontdoor o backdoor</td><td>Respeta</td><td>Espejo = valor leído; con <code>UVM_CHECK</code>, compara antes</td></tr>
+<tr><td><code>predict</code></td><td>No</td><td>—</td><td>Opcional (según <code>kind</code>)</td><td>Fija el espejo</td></tr>
+<tr><td><code>reset</code></td><td>No</td><td>—</td><td>—</td><td>Espejo y deseado = valores de reset</td></tr>
+</tbody></table></div>
+</section>
+
+<!-- ===================================================== 11 -->
+<section id="s11">
+<h2>11. Secuencias de registros predefinidas</h2>
+<p>UVM incluye secuencias que verifican registros y memorias de forma genérica, usando solo la información del modelo. Son la primera prueba que conviene ejecutar al integrar un bloque.</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Secuencia</th><th>Qué comprueba</th><th>Atributo para excluir</th></tr></thead>
+<tbody>
+<tr><td><code>uvm_reg_hw_reset_seq</code></td><td>Que cada registro tiene su valor de reset (lee y compara, ignorando campos volátiles y sin reset)</td><td><code>NO_REG_HW_RESET_TEST</code></td></tr>
+<tr><td><code>uvm_reg_bit_bash_seq</code></td><td>Que cada bit de cada campo RW se puede escribir a 0 y a 1, y que los demás bits se comportan según su política</td><td><code>NO_REG_BIT_BASH_TEST</code></td></tr>
+<tr><td><code>uvm_reg_access_seq</code></td><td>Que frontdoor y backdoor ven lo mismo: escribe por uno y lee por el otro</td><td><code>NO_REG_ACCESS_TEST</code></td></tr>
+<tr><td><code>uvm_mem_walk_seq</code></td><td>Recorre la memoria con un patrón de "bit que camina"</td><td><code>NO_MEM_WALK_TEST</code></td></tr>
+<tr><td><code>uvm_mem_access_seq</code></td><td>Frontdoor frente a backdoor en memorias</td><td><code>NO_MEM_ACCESS_TEST</code></td></tr>
+<tr><td><code>uvm_reg_mem_hdl_paths_seq</code></td><td>Que las rutas HDL existen</td><td>—</td></tr>
+<tr><td><code>uvm_reg_mem_built_in_seq</code></td><td>Ejecuta las anteriores según una máscara de tests</td><td><code>NO_REG_TESTS</code>, <code>NO_MEM_TESTS</code></td></tr>
+</tbody></table></div>
+
+<p>Las exclusiones se declaran con el <em>resource database</em>, usando como ámbito <code>"REG::"</code> más el nombre completo del registro o memoria. Excluye los registros cuyos efectos secundarios rompen la prueba:</p>
+<pre><code class="language-verilog">class builtin_test extends ral_test;
+  `uvm_component_utils(builtin_test)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  task run_phase(uvm_phase phase);
+    uvm_reg_hw_reset_seq      rst_seq  = uvm_reg_hw_reset_seq::type_id::create("rst_seq");
+    uvm_reg_bit_bash_seq      bash_seq = uvm_reg_bit_bash_seq::type_id::create("bash_seq");
+    uvm_mem_walk_seq          walk_seq = uvm_mem_walk_seq::type_id::create("walk_seq");
+    uvm_reg_mem_hdl_paths_seq path_seq = uvm_reg_mem_hdl_paths_seq::type_id::create("path_seq");
+
+    // CMD lanza operaciones; STATUS e INT_STAT cambian por hardware
+    uvm_resource_db #(bit)::set({"REG::", env.rm.CMD.get_full_name()},      "NO_REG_BIT_BASH_TEST", 1, this);
+    uvm_resource_db #(bit)::set({"REG::", env.rm.STATUS.get_full_name()},   "NO_REG_BIT_BASH_TEST", 1, this);
+    uvm_resource_db #(bit)::set({"REG::", env.rm.INT_STAT.get_full_name()}, "NO_REG_BIT_BASH_TEST", 1, this);
+
+    phase.raise_objection(this);
+    path_seq.model = env.rm;  path_seq.start(null);
+    rst_seq.model  = env.rm;  rst_seq.start(null);
+    bash_seq.model = env.rm;  bash_seq.start(null);
+    walk_seq.model = env.rm;  walk_seq.start(null);
+    phase.drop_objection(this);
+  endtask
+endclass</code></pre>
+
+<div class="check">
+<p><strong>Qué observar.</strong> Sin errores inyectados, las cuatro secuencias terminan sin <code>UVM_ERROR</code>; el bit bash genera muchas transacciones (dos escrituras y dos lecturas por bit de <code>CTRL</code> y <code>SCRATCH</code>), y el walk de memoria, varias por palabra. Repite con <code>+define+BUG_SCRATCH</code>: el bit bash informa del bit 31 de <code>SCRATCH</code> sin que hayas escrito ninguna prueba específica.</p>
+</div>
+
+<details class="solution">
+<summary>Ejercicio: ¿por qué hay que excluir CMD del bit bash?</summary>
+<div class="body">
+<p>El bit bash escribe patrones en cada registro. En <code>CMD</code>, con <code>EN</code> a 1, escribir valores distintos de 0 lanza operaciones o incrementa <code>ERR_CNT</code>, cambiando <code>STATUS</code> e <code>INT_STAT</code> en mitad de la prueba. Además, un campo WO no puede leerse para comprobar lo escrito. Cualquier registro con efectos secundarios al escribirse debe excluirse o probarse con secuencias específicas.</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 12 -->
+<section id="s12">
+<h2>12. Errores comunes y lista de comprobación</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr></thead>
+<tbody>
+<tr><td>El primer acceso frontdoor no ocurre o UVM informa de que el mapa no tiene secuenciador</td><td>Falta <code>set_sequencer</code>, o se llamó antes de crear el agente</td><td>Llamarlo en <code>connect_phase</code> del env</td></tr>
+<tr><td>El predictor no actualiza nada; mensajes de registro no encontrado para una dirección</td><td>Falta <code>lock_model()</code>, falta <code>predictor.map</code>, o direcciones con distinto direccionamiento (bytes frente a palabras)</td><td>Revisar la construcción y el argumento <code>byte_addressing</code> de <code>create_map</code></td></tr>
+<tr><td>La simulación se cuelga en el primer acceso</td><td><code>provides_responses = 1</code> pero el driver no devuelve respuestas</td><td>Ajustar la propiedad al comportamiento real del driver</td></tr>
+<tr><td>Las lecturas devuelven 0 aunque el bus muestra el dato correcto</td><td><code>bus2reg</code> no copia <code>data</code>, o el driver no guarda <code>prdata</code> en el item</td><td>Revisar adaptador y driver</td></tr>
+<tr><td>Falsos errores en <code>mirror(UVM_CHECK)</code> de registros de estado</td><td>Campos modificados por el hardware no marcados como volátiles</td><td>Marcar <code>volatile = 1</code></td></tr>
+<tr><td>Predicciones dobles (por ejemplo, contadores RC que se borran dos veces)</td><td><code>set_auto_predict(1)</code> y predictor explícito a la vez</td><td>Elegir uno: normalmente el explícito</td></tr>
+<tr><td>Escribir un campo corrompe otros campos del registro</td><td>Espejo desactualizado: el acceso a campo escribe el registro entero con los valores del espejo</td><td>Predicción explícita y <code>mirror</code> antes de escrituras parciales</td></tr>
+<tr><td>Errores de ruta HDL o lecturas backdoor a 0</td><td>Ruta mal escrita, raíz incorrecta, o compilación sin acceso a la jerarquía</td><td><code>uvm_reg_mem_hdl_paths_seq</code> y opciones de la Sección 9.3</td></tr>
+<tr><td>El espejo no coincide con el DUT tras un reset en mitad de la simulación</td><td>No se llamó a <code>rm.reset()</code></td><td>Llamarlo cuando el monitor detecte el reset</td></tr>
+<tr><td><code>update()</code> lanza operaciones inesperadas</td><td>Registros de comando aleatorizados con el bloque</td><td><code>rand_mode(0)</code> en esos campos</td></tr>
+</tbody></table></div>
+
+<h3>Lista de comprobación de integración</h3>
+<ol>
+  <li>Cada campo tiene política, volatilidad, reset y aleatorización correctos según la especificación.</li>
+  <li>Los registros y campos del bloque se declaran <code>rand</code> cuando deben poder aleatorizarse.</li>
+  <li>El mapa tiene el ancho, el orden de bytes y el direccionamiento del bus real.</li>
+  <li>El env construye el modelo, fija la raíz HDL, llama a <code>lock_model()</code> y a <code>reset()</code>.</li>
+  <li>El adaptador declara correctamente <code>supports_byte_enable</code> y <code>provides_responses</code>, y <code>bus2reg</code> rellena dato y estado.</li>
+  <li>Predicción explícita conectada al monitor, y auto predicción desactivada.</li>
+  <li><code>uvm_reg_mem_hdl_paths_seq</code>, <code>uvm_reg_hw_reset_seq</code> y <code>uvm_reg_bit_bash_seq</code> pasan.</li>
+  <li>Los registros con efectos secundarios están excluidos de las pruebas genéricas y tienen secuencias propias.</li>
+</ol>
+</section>
+
+<!-- ===================================================== 13 -->
+<section id="s13">
+<h2>13. Evaluación y referencias</h2>
+<h3>13.1 Preguntas</h3>
+<ol>
+  <li>Explica la diferencia entre valor deseado, espejo y real.</li>
+  <li>¿Por qué el contenido de un registro se crea en <code>build()</code> y no en el constructor?</li>
+  <li>¿Qué hace <code>lock_model()</code> y qué falla si se omite?</li>
+  <li>Un campo de estado cambia por hardware. ¿Qué argumento de <code>configure</code> debes poner a 1 y qué consecuencia tiene?</li>
+  <li>¿Qué diferencia hay entre las políticas W1C, WC y RC?</li>
+  <li>¿Qué devuelve <code>reg2bus</code> y cuándo llama UVM a <code>bus2reg</code>?</li>
+  <li>¿Por qué se prefiere el predictor explícito al implícito?</li>
+  <li>¿Qué diferencia hay entre <code>write(..., UVM_BACKDOOR)</code> y <code>poke()</code> en un campo W1C?</li>
+  <li>¿Por qué una clase de backdoor de usuario se declara dentro de un módulo?</li>
+  <li>¿Por qué no existe <code>mirror()</code> para memorias?</li>
+</ol>
+
+<details class="solution">
+<summary>13.2 Respuestas</summary>
+<div class="body">
+<ol>
+  <li>El deseado es el valor que queremos que tenga el registro (lo cambian <code>set</code> y <code>randomize</code>); el espejo es lo que el modelo cree que tiene el DUT (lo actualizan las predicciones); el real es lo que hay en el DUT.</li>
+  <li>Porque la fábrica necesita constructores con firma fija; separar la construcción permite sustituir cada clase por override y configurar antes de construir.</li>
+  <li>Cierra el modelo: calcula direcciones, detecta solapamientos y prepara las búsquedas por dirección. Sin él, el predictor no encuentra registros por dirección y los accesos dan errores.</li>
+  <li><code>volatile</code>. El espejo solo se actualiza al leer, y <code>mirror(UVM_CHECK)</code> no compara ese campo.</li>
+  <li>W1C: cada 1 escrito borra su bit. WC: cualquier escritura borra todo el campo. RC: la lectura borra todo el campo.</li>
+  <li><code>reg2bus</code> devuelve el item del bus a partir de la operación de registro. UVM llama a <code>bus2reg</code> al terminar cada acceso frontdoor (para recuperar dato y estado) y el predictor lo llama con cada transacción observada.</li>
+  <li>Porque ve todo lo que ocurre en el bus, incluidos accesos de otros masters y secuencias que no usan el modelo; el implícito solo conoce los accesos hechos a través del modelo.</li>
+  <li><code>write</code> por backdoor emula la política: escribir 1 borra el bit. <code>poke</code> escribe el valor crudo: escribir 1 lo deja a 1.</li>
+  <li>Porque las clases declaradas en un módulo pueden usar referencias jerárquicas a señales del diseño; las de un paquete no.</li>
+  <li>Porque las memorias no tienen espejo: guardar una copia de memorias grandes sería costoso, así que cada acceso va siempre al DUT. Si se necesita un modelo de contenido, se mantiene en el scoreboard.</li>
+</ol>
+</div>
+</details>
+
+<h3>13.3 Ampliaciones propuestas</h3>
+<ul>
+  <li>Añade un campo <code>LOCK</code> de política <code>W1</code> a <code>CTRL</code> (en el modelo y en el RTL) y comprueba con el bit bash cómo lo trata UVM.</li>
+  <li>Añade al DUT <code>PSLVERR</code> para direcciones no mapeadas y propaga el error en <code>bus2reg</code> como <code>UVM_NOT_OK</code>.</li>
+  <li>Activa cobertura (<code>UVM_CVR_FIELD_VALS</code>) en <code>CTRL</code> y mide qué valores de <code>MODE</code> se han escrito.</li>
+  <li>Genera el modelo desde una descripción IP-XACT o SystemRDL con un generador y compáralo con el escrito a mano.</li>
+</ul>
+
+<h3>13.4 Referencias</h3>
+<ul>
+  <li>IEEE Std 1800.2, <em>Standard for Universal Verification Methodology Language Reference Manual</em>, capítulos del Register Layer (<code>uvm_reg_block</code>, <code>uvm_reg</code>, <code>uvm_reg_field</code>, <code>uvm_mem</code>, <code>uvm_reg_map</code>, <code>uvm_reg_adapter</code>, <code>uvm_reg_predictor</code>, <code>uvm_reg_backdoor</code>, secuencias predefinidas).</li>
+  <li>Accellera, <em>UVM 1.2 User's Guide</em>, capítulo "Using the Register Layer Classes", y <em>UVM 1.2 Class Reference</em>.</li>
+  <li>Código fuente de UVM: <code>src/reg/</code> (<code>uvm_reg_field.svh</code> contiene la tabla de políticas y su predicción; <code>uvm_reg_map.svh</code>, el camino frontdoor; <code>uvm_reg_backdoor.svh</code> y <code>src/dpi/uvm_hdl.c</code>, el backdoor).</li>
+  <li>Verification Academy (Siemens EDA), <em>UVM Cookbook</em>, sección "Registers".</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/verilog.min.js"></script>
+<script>
+  if (window.hljs) { hljs.highlightAll(); }
+</script>
+</body>
+</html>

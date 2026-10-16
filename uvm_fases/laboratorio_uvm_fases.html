@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio guiado: las fases de UVM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #18232e; --ink-soft: #4a5866; --paper: #fbfcfb; --panel: #eef3f0; --rule: #d3ddd8;
+    --mask: #1e5b46; --pad: #a87b1f; --code-bg: #10261f; --code-ink: #dbe8e1;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e4ebe7; --ink-soft: #a4b2ab; --paper: #121a17; --panel: #1a2621;
+      --rule: #2d3d36; --mask: #6fbf9c; --pad: #d9b25a; --code-bg: #0b1814; --code-ink: #dbe8e1;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1.0625rem/1.65 var(--sans); }
+  a { color: var(--mask); }
+  a:focus-visible, summary:focus-visible, button:focus-visible { outline: 2px solid var(--pad); outline-offset: 3px; border-radius: 2px; }
+
+  .layout { display: grid; grid-template-columns: 17rem minmax(0, 1fr); max-width: 78rem; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 2.5rem 1.5rem 2rem 1.75rem; border-right: 1px solid var(--rule); font-size: 0.92rem;
+  }
+  nav.toc p { margin: 0 0 0.75rem; font-weight: 600; color: var(--ink-soft); }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; }
+  nav.toc li { margin: 0.15rem 0; }
+  nav.toc a { display: block; padding: 0.3rem 0.5rem; border-left: 2px solid transparent; color: var(--ink); text-decoration: none; line-height: 1.35; }
+  nav.toc a:hover { border-left-color: var(--pad); background: var(--panel); }
+
+  main { padding: 2.5rem clamp(1.25rem, 4vw, 3.5rem) 5rem; min-width: 0; }
+  .measure { max-width: 46rem; }
+
+  header.title { margin-bottom: 3rem; padding-bottom: 1.5rem; border-bottom: 3px solid var(--mask); position: relative; }
+  header.title::after { content: ""; position: absolute; left: 0; bottom: -3px; width: 4.5rem; height: 3px; background: var(--pad); }
+  header.title h1 { font-size: clamp(2rem, 4.2vw, 2.9rem); line-height: 1.1; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 0.75rem; }
+  header.title .byline { color: var(--ink-soft); margin: 0; }
+
+  h2 { font-size: 1.6rem; line-height: 1.25; font-weight: 600; margin: 4rem 0 1rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.2rem; font-weight: 600; margin: 2.25rem 0 0.6rem; color: var(--mask); }
+  p, ul, ol { margin: 0 0 1rem; }
+  li { margin: 0.25rem 0; }
+
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--panel); padding: 0.08em 0.32em; border-radius: 3px; }
+  pre {
+    margin: 0 0 1.25rem; padding: 1.1rem 1.25rem; overflow-x: auto;
+    background: var(--code-bg); color: var(--code-ink);
+    border-left: 3px solid var(--pad); border-radius: 0 4px 4px 0; font-size: 0.86rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.5rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+  th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--rule); }
+  thead th { background: var(--panel); font-weight: 600; border-bottom: 2px solid var(--mask); }
+  td.blank { min-width: 7rem; }
+
+  .file { font-weight: 600; margin: 1.5rem 0 0.4rem; }
+  .file code { background: none; padding: 0; font-size: 0.95em; }
+
+  .flow {
+    margin: 0 0 1.5rem; padding: 1rem 1.25rem; background: var(--panel);
+    border-radius: 4px; font-family: var(--mono); font-size: 0.82rem; line-height: 1.6;
+    white-space: pre; overflow-x: auto;
+  }
+
+  details.solution { margin: 1.5rem 0 2rem; border: 1px solid var(--rule); border-left: 3px solid var(--mask); border-radius: 0 4px 4px 0; }
+  details.solution > summary {
+    cursor: pointer; padding: 0.8rem 1.1rem; font-weight: 600; color: var(--mask);
+    list-style: none; display: flex; align-items: center; gap: 0.6rem;
+  }
+  details.solution > summary::-webkit-details-marker { display: none; }
+  details.solution > summary::before {
+    content: "+"; display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem;
+    border: 1.5px solid currentColor; border-radius: 3px; font-family: var(--mono); line-height: 1;
+  }
+  details.solution[open] > summary::before { content: "\2212"; }
+  details.solution > .body { padding: 0 1.1rem 0.5rem; }
+
+  .print-btn { font: 500 0.9rem var(--sans); color: var(--mask); background: none; cursor: pointer; border: 1px solid var(--rule); border-radius: 3px; padding: 0.35rem 0.7rem; margin-top: 1rem; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); padding: 1.5rem 1.25rem; }
+  }
+  @media print {
+    nav.toc, .print-btn { display: none; }
+    .layout { display: block; }
+    pre { white-space: pre-wrap; border: 1px solid #999; background: #f4f4f4; color: #000; }
+  }
+  .hljs-keyword, .hljs-built_in { color: #8fd3b4; }
+  .hljs-type { color: #9cc7e8; }
+  .hljs-string { color: #e6c37a; }
+  .hljs-number, .hljs-literal { color: #f0a58a; }
+  .hljs-comment { color: #7f978c; font-style: italic; }
+  .hljs-meta { color: #c7a8e8; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="Contenido">
+  <p>Contenido</p>
+  <ol>
+    <li><a href="#s1">1. Introducción y objetivos</a></li>
+    <li><a href="#s2">2. Teoría I: las fases comunes</a></li>
+    <li><a href="#s3">3. Teoría II: objeciones y fin de fase</a></li>
+    <li><a href="#s4">4. Teoría III: fases de ejecución, callbacks y saltos</a></li>
+    <li><a href="#s5">5. Práctica 1: orden de las fases</a></li>
+    <li><a href="#s6">6. Práctica 2: objeciones y fin de simulación</a></li>
+    <li><a href="#s7">7. Práctica 3: fases de tiempo de ejecución</a></li>
+    <li><a href="#s8">8. Práctica 4: callbacks y secuencias</a></li>
+    <li><a href="#s9">9. Práctica 5: saltos de fase y depuración</a></li>
+    <li><a href="#s10">10. Evaluación y buenas prácticas</a></li>
+  </ol>
+  <button class="print-btn" type="button" onclick="document.querySelectorAll('details').forEach(d=>d.open=true);window.print()">Imprimir con soluciones</button>
+</nav>
+
+<main>
+<div class="measure">
+
+<header class="title">
+  <h1>Laboratorio guiado: las fases de UVM</h1>
+  <p class="byline">1 de octubre de 2026</p>
+</header>
+
+<!-- ===================================================== 1 -->
+<section id="s1">
+<h2>1. Introducción y objetivos</h2>
+<p>Al terminar este laboratorio sabrás en qué orden ejecuta UVM cada fase sobre cada componente, qué código va en cada una, cómo controlar cuándo termina la simulación con objeciones y cómo usar las fases de tiempo de ejecución, los callbacks y los saltos de fase. El laboratorio dura unas 4 horas: 1 hora de teoría y 5 prácticas que no necesitan DUT, porque los componentes imprimen cada fase que ejecutan.</p>
+
+<p><strong>Objetivos de aprendizaje</strong></p>
+<ol>
+  <li>Enumerar las fases comunes, su tipo (función o tarea) y su sentido de recorrido (de arriba abajo o de abajo arriba).</li>
+  <li>Decidir en qué fase va cada tarea de un testbench: construir, conectar, configurar, estimular, comprobar, informar.</li>
+  <li>Controlar el fin de una fase con objeciones, tiempo de drenaje y timeout.</li>
+  <li>Predecir la sincronización entre componentes en las 12 fases de tiempo de ejecución.</li>
+  <li>Usar <code>phase_ready_to_end</code>, <code>phase_started</code>, <code>phase_ended</code> y objeciones automáticas en secuencias.</li>
+  <li>Aplicar un salto de fase para un reset en caliente.</li>
+  <li>Depurar con <code>+UVM_PHASE_TRACE</code> y <code>+UVM_OBJECTION_TRACE</code>.</li>
+</ol>
+
+<p><strong>Requisitos previos</strong></p>
+<ul>
+  <li>SystemVerilog: diferencia entre <code>function</code> y <code>task</code>, <code>fork/join_none</code>, <code>wait</code>.</li>
+  <li>UVM básico: componentes, jerarquía, fábrica (<code>type_id::create</code>), agente con driver y secuenciador.</li>
+  <li>Un simulador con UVM 1.2 o IEEE 1800.2: Questa, VCS, Xcelium, Riviera-PRO o <a href="https://www.edaplayground.com">EDA Playground</a>.</li>
+</ul>
+
+<p><strong>Convenciones</strong></p>
+<ul>
+  <li>Cada práctica tiene: objetivo, código, tareas, una tabla para anotar tu predicción y la solución plegada.</li>
+  <li>Escribe la predicción antes de simular: el objetivo es construir un modelo mental correcto, no solo ver el log.</li>
+  <li>Todo el código usa unidades explícitas (<code>#50ns</code>). Añade <code>`timescale 1ns/1ps</code> al principio de cada archivo.</li>
+</ul>
+</section>
+
+<!-- ===================================================== 2 -->
+<section id="s2">
+<h2>2. Teoría I: las fases comunes</h2>
+<p>Las fases son los pasos sincronizados en los que UVM ejecuta un método con el mismo nombre en todos los componentes: nadie empieza a conectar hasta que todos han terminado de construirse, y nadie informa hasta que todos han terminado de simular. Ese orden garantizado es lo que permite que componentes escritos por personas distintas funcionen juntos.</p>
+
+<h3>2.1 Mapa de fases</h3>
+<div class="flow">build ──▶ connect ──▶ end_of_elaboration ──▶ start_of_simulation
+(arriba→abajo) (abajo→arriba)   (abajo→arriba)            (abajo→arriba)
+                                                              │
+          ┌───────────────────────────────────────────────────┴──────────┐
+          ▼                                                              ▼
+      run_phase                                pre_reset → reset → post_reset
+  (tarea, en paralelo con                      pre_configure → configure → post_configure
+   todo el schedule de la derecha)             pre_main → main → post_main
+                                               pre_shutdown → shutdown → post_shutdown
+          └──────────────────────────────┬───────────────────────────────┘
+                                         ▼      (empieza cuando terminan AMBAS ramas)
+           extract ──▶ check ──▶ report ──▶ final
+         (abajo→arriba) (abajo→arriba) (abajo→arriba) (arriba→abajo)</div>
+
+<h3>2.2 Detalle de cada fase común</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Fase</th><th>Tipo</th><th>Recorrido</th><th>Uso típico</th></tr></thead>
+<tbody>
+<tr><td><code>build_phase</code></td><td>función</td><td>arriba → abajo</td><td>Leer configuración (<code>config_db::get</code>), publicar configuración para los hijos, crear hijos con la fábrica, registrar overrides</td></tr>
+<tr><td><code>connect_phase</code></td><td>función</td><td>abajo → arriba</td><td>Conectar puertos TLM (<code>drv.seq_item_port.connect(...)</code>), analysis ports, asignar handles entre componentes</td></tr>
+<tr><td><code>end_of_elaboration_phase</code></td><td>función</td><td>abajo → arriba</td><td>Ajustes finales con la jerarquía completa: imprimir topología, cambiar verbosidad, comprobaciones de configuración</td></tr>
+<tr><td><code>start_of_simulation_phase</code></td><td>función</td><td>abajo → arriba</td><td>Últimos preparativos antes de que corra el tiempo: mensajes iniciales, abrir ficheros, inicializar modelos</td></tr>
+<tr><td><code>run_phase</code></td><td>tarea</td><td>todas en paralelo</td><td>Estímulo, monitorización, scoreboard: todo lo que consume tiempo</td></tr>
+<tr><td><code>extract_phase</code></td><td>función</td><td>abajo → arriba</td><td>Recoger resultados: leer contadores, vaciar colas, obtener cobertura</td></tr>
+<tr><td><code>check_phase</code></td><td>función</td><td>abajo → arriba</td><td>Comprobaciones finales: colas vacías, transacciones pendientes, valores esperados</td></tr>
+<tr><td><code>report_phase</code></td><td>función</td><td>abajo → arriba</td><td>Informar: resumen PASS/FAIL, estadísticas</td></tr>
+<tr><td><code>final_phase</code></td><td>función</td><td>arriba → abajo</td><td>Cerrar ficheros y liberar recursos; después UVM llama a <code>$finish</code></td></tr>
+</tbody></table></div>
+
+<h3>2.3 Por qué ese sentido de recorrido</h3>
+<ul>
+  <li><strong>build, de arriba abajo</strong>: un componente solo existe después de que su padre lo cree en su <code>build_phase</code>. Además, el padre publica la configuración antes de que el hijo la lea.</li>
+  <li><strong>connect y siguientes, de abajo arriba</strong>: cuando un padre conecta, sus hijos ya han conectado sus propios puertos internos. En realidad, como todo <code>build</code> ha terminado, el orden importa poco; lo esencial es que conectar ocurre después de construir.</li>
+  <li>Entre hermanos, UVM recorre los hijos por orden alfabético de nombre de instancia. No escribas código que dependa de ello.</li>
+  <li>Recorrido de abajo arriba significa <em>post-orden</em>: primero todos los descendientes de un componente, después el componente.</li>
+</ul>
+
+<h3>2.4 Reglas que impone cada tipo de fase</h3>
+<ul>
+  <li>Las fases función no pueden consumir tiempo: un <code>#10</code> o un <code>@(posedge clk)</code> dentro de ellas es un error de compilación.</li>
+  <li>Los componentes solo pueden crearse durante <code>build_phase</code>. Crear uno después provoca un <code>uvm_fatal</code>.</li>
+  <li>En las fases tarea, el proceso de cada componente arranca en paralelo con los demás; ningún componente debe asumir que otro ya ha empezado.</li>
+  <li>Cuando una fase tarea termina, UVM mata los procesos que aún estén corriendo en ella. Un <code>forever</code> en <code>run_phase</code> es correcto: lo detiene el fin de fase.</li>
+  <li>Llama a <code>super.build_phase(phase)</code> en tus componentes: en clases que heredan de una base propia, ahí se construye lo de la base; en <code>uvm_component</code>, ahí se aplica la configuración automática.</li>
+</ul>
+</section>
+
+<!-- ===================================================== 3 -->
+<section id="s3">
+<h2>3. Teoría II: objeciones y fin de fase</h2>
+<p>Una fase tarea termina cuando nadie se opone a que termine. Cada componente u objeto que necesita tiempo levanta una <em>objeción</em> al empezar su trabajo y la retira al terminar; cuando el contador de objeciones de la fase llega a cero, la fase acaba y UVM mata los procesos que sigan vivos en ella.</p>
+
+<h3>3.1 La API básica</h3>
+<pre><code class="language-verilog">task run_phase(uvm_phase phase);
+  phase.raise_objection(this, "Enviando estímulo");   // contador +1
+  seq.start(env.agt.sqr);
+  phase.drop_objection(this, "Estímulo terminado");   // contador -1
+endtask</code></pre>
+<ul>
+  <li>El segundo argumento es una descripción que aparece en la traza de objeciones; úsalo siempre.</li>
+  <li>Un tercer argumento opcional (<code>count</code>) permite subir o bajar varias unidades a la vez.</li>
+  <li>Cada fase tiene su propio contador: una objeción en <code>run_phase</code> no mantiene viva <code>main_phase</code>, ni al revés.</li>
+  <li>Si nadie levanta ninguna objeción, la fase termina en el mismo instante en que empieza (tras unos pocos ciclos delta).</li>
+</ul>
+
+<h3>3.2 Tiempo de drenaje</h3>
+<p>El tiempo de drenaje retrasa el fin de fase una cantidad fija desde que el contador llega a cero. Sirve para que las últimas transacciones atraviesen el DUT y lleguen al monitor y al scoreboard.</p>
+<pre><code class="language-verilog">phase.get_objection().set_drain_time(this, 100ns);</code></pre>
+<p>Si alguien vuelve a levantar una objeción durante el drenaje, el contador ya no es cero y el drenaje se cancela; volverá a empezar cuando el contador caiga otra vez a cero.</p>
+
+<h3>3.3 Timeout global</h3>
+<p>Si una objeción nunca se retira (un <code>wait</code> que no llega, un handshake bloqueado), la simulación no termina. El timeout global la aborta con un <code>uvm_fatal</code>:</p>
+<pre><code class="language-verilog">uvm_top.set_timeout(1ms, 1);   // tiempo y si se puede sobrescribir
+// o desde la línea de comandos: +UVM_TIMEOUT=1000000ns,YES</code></pre>
+<p>El valor por defecto es muy grande (9200 s en UVM 1.2), así que conviene fijar uno realista en el test base.</p>
+
+<h3>3.4 Dónde levantar objeciones</h3>
+<ul>
+  <li><strong>En el test o en las secuencias de nivel superior</strong>: es quien sabe cuándo ha terminado el estímulo. Es la recomendación general.</li>
+  <li><strong>En un driver o scoreboard, por transacción</strong>: aceptable para impedir que la simulación corte una transacción a medias, pero multiplica las objeciones y ralentiza.</li>
+  <li><strong>Nunca en un monitor con <code>forever</code></strong> sin retirarla: la fase no terminaría nunca.</li>
+  <li>Para esperar a que el scoreboard se vacíe, usa <code>phase_ready_to_end</code> (Sección 4) o tiempo de drenaje, no una objeción permanente.</li>
+</ul>
+
+<h3>3.5 Qué ocurre al final</h3>
+<p>Cuando terminan <code>run_phase</code> y la rama de fases de ejecución, se ejecutan <code>extract</code>, <code>check</code>, <code>report</code> y <code>final</code>. Después <code>run_test()</code> llama a <code>$finish</code>, salvo que se haya desactivado con <code>uvm_root::get().finish_on_completion = 0</code>.</p>
+</section>
+
+<!-- ===================================================== 4 -->
+<section id="s4">
+<h2>4. Teoría III: fases de ejecución, callbacks y saltos</h2>
+<p>Además de <code>run_phase</code>, UVM define 12 fases tarea que dividen la simulación en reset, configuración, operación principal y apagado. Corren en paralelo con <code>run_phase</code> y se sincronizan entre todos los componentes: nadie pasa a <code>main_phase</code> hasta que todos han terminado <code>reset_phase</code>.</p>
+
+<h3>4.1 Las fases de tiempo de ejecución</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Grupo</th><th>Fases</th><th>Uso típico</th></tr></thead>
+<tbody>
+<tr><td>Reset</td><td><code>pre_reset</code>, <code>reset</code>, <code>post_reset</code></td><td>Aplicar y liberar el reset, poner las interfaces en estado inicial</td></tr>
+<tr><td>Configuración</td><td><code>pre_configure</code>, <code>configure</code>, <code>post_configure</code></td><td>Programar registros del DUT</td></tr>
+<tr><td>Principal</td><td><code>pre_main</code>, <code>main</code>, <code>post_main</code></td><td>Tráfico principal del test</td></tr>
+<tr><td>Apagado</td><td><code>pre_shutdown</code>, <code>shutdown</code>, <code>post_shutdown</code></td><td>Vaciar tráfico pendiente, leer estado final</td></tr>
+</tbody></table></div>
+<ul>
+  <li>Cada una termina cuando su contador de objeciones llega a cero, con la misma API que <code>run_phase</code>.</li>
+  <li>Una fase en la que nadie levanta objeciones dura cero tiempo.</li>
+  <li>La fase siguiente empieza a la vez para todos, cuando el componente más lento ha terminado.</li>
+  <li><code>extract_phase</code> espera a que terminen tanto <code>run_phase</code> como <code>post_shutdown_phase</code>.</li>
+</ul>
+<p>Muchas metodologías (por ejemplo, el UVM Cookbook) recomiendan que drivers y monitores usen solo <code>run_phase</code>, y que la división en reset, configuración y tráfico la hagan las secuencias del test. Las fases de ejecución son útiles cuando varios componentes deben cambiar de etapa sincronizados, o para resets en caliente.</p>
+
+<h3>4.2 Callbacks de fase</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Método de <code>uvm_component</code></th><th>Cuándo se llama</th><th>Uso</th></tr></thead>
+<tbody>
+<tr><td><code>phase_started(uvm_phase phase)</code></td><td>Al empezar cualquier fase, antes del método de fase</td><td>Trazas, inicializaciones comunes</td></tr>
+<tr><td><code>phase_ready_to_end(uvm_phase phase)</code></td><td>Cuando el contador de objeciones de una fase tarea llega a cero</td><td>Retrasar el fin de fase levantando una objeción (por ejemplo, hasta que el scoreboard se vacíe)</td></tr>
+<tr><td><code>phase_ended(uvm_phase phase)</code></td><td>Al terminar cualquier fase</td><td>Trazas, estadísticas por fase</td></tr>
+</tbody></table></div>
+<p>Si en <code>phase_ready_to_end</code> se levanta una objeción, cuando vuelva a llegar a cero UVM llamará de nuevo a <code>phase_ready_to_end</code> (hasta un máximo configurable de iteraciones, 20 por defecto). Por eso hay que proteger el código para no levantar objeciones indefinidamente.</p>
+
+<h3>4.3 Objeciones automáticas en secuencias</h3>
+<p>Desde UVM 1.2, una secuencia puede levantar y retirar la objeción de su fase de arranque ella sola:</p>
+<pre><code class="language-verilog">function new(string name = "my_seq");
+  super.new(name);
+  set_automatic_phase_objection(1);
+endfunction
+
+// Al lanzarla:
+seq.set_starting_phase(phase);
+seq.start(sqr);</code></pre>
+<p>La objeción se levanta al empezar <code>start()</code> y se retira al terminar el cuerpo. En UVM 1.1 se usaba la variable <code>starting_phase</code> y se levantaba la objeción a mano en <code>pre_body</code>/<code>post_body</code>; esa variable está obsoleta.</p>
+
+<h3>4.4 Saltos de fase</h3>
+<p><code>phase.jump(uvm_reset_phase::get())</code> termina la fase actual y salta a otra fase del mismo schedule de ejecución. El uso principal es el reset en caliente: a mitad de <code>main_phase</code>, el test vuelve a <code>reset_phase</code> y todos los componentes repiten reset, configuración y tráfico.</p>
+<ul>
+  <li>Al saltar, UVM mata los procesos de la fase actual y descarta sus objeciones.</li>
+  <li>Solo se debe saltar entre fases de ejecución (de <code>pre_reset</code> a <code>post_shutdown</code>). Saltar desde o hacia fases función o <code>run_phase</code> no está soportado de forma fiable.</li>
+  <li>Los componentes que solo usan <code>run_phase</code> no se enteran del salto: deben estar preparados para un reset por otros medios (por ejemplo, observando la señal de reset).</li>
+</ul>
+
+<h3>4.5 Dominios (visión general)</h3>
+<p>Todas las fases de ejecución pertenecen por defecto al dominio <code>uvm</code>. Con <code>set_domain()</code> se puede asignar un subárbol de componentes a otro dominio, cuyas fases avanzan de forma independiente (por ejemplo, dos interfaces con resets separados). Es un mecanismo avanzado y poco usado; este laboratorio no lo practica.</p>
+</section>
+
+<!-- ===================================================== 5 -->
+<section id="s5">
+<h2>5. Práctica 1: el orden de las fases comunes</h2>
+<p>Objetivo: ver con tus propios ojos el orden en que UVM ejecuta cada fase común sobre cada componente, y comprobar las restricciones de las fases función.</p>
+
+<h3>5.1 Código</h3>
+<p class="file"><code>phases_lab_pkg.sv</code></p>
+<pre><code class="language-verilog">`timescale 1ns/1ps
+package phases_lab_pkg;
+  import uvm_pkg::*;
+  `include "uvm_macros.svh"
+
+  // Imprime la fase y el componente; uvm_info ya añade el tiempo
+  function automatic void trace(uvm_component c, uvm_phase phase);
+    `uvm_info("TRACE", $sformatf("%-26s %s", phase.get_name(), c.get_full_name()), UVM_LOW)
+  endfunction
+
+  // Componente que traza todas las fases comunes
+  class tracer extends uvm_component;
+    `uvm_component_utils(tracer)
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);               trace(this, phase); endfunction
+    function void connect_phase(uvm_phase phase);             trace(this, phase); endfunction
+    function void end_of_elaboration_phase(uvm_phase phase);  trace(this, phase); endfunction
+    function void start_of_simulation_phase(uvm_phase phase); trace(this, phase); endfunction
+    task          run_phase(uvm_phase phase);                 trace(this, phase); endtask
+    function void extract_phase(uvm_phase phase);             trace(this, phase); endfunction
+    function void check_phase(uvm_phase phase);               trace(this, phase); endfunction
+    function void report_phase(uvm_phase phase);              trace(this, phase); endfunction
+    function void final_phase(uvm_phase phase);               trace(this, phase); endfunction
+  endclass
+
+  class trc_agent extends tracer;
+    `uvm_component_utils(trc_agent)
+    tracer drv, mon;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);                       // traza
+      // TODO 1: crea drv y mon como tracer con la fábrica
+    endfunction
+  endclass
+
+  class trc_env extends tracer;
+    `uvm_component_utils(trc_env)
+    trc_agent agt;
+    tracer    scb;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      agt = trc_agent::type_id::create("agt", this);
+      scb = tracer::type_id::create("scb", this);
+    endfunction
+  endclass
+
+  class phases_test extends uvm_test;
+    `uvm_component_utils(phases_test)
+    trc_env env;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      trace(this, phase);
+      env = trc_env::type_id::create("env", this);
+    endfunction
+    function void connect_phase(uvm_phase phase);             trace(this, phase); endfunction
+    function void end_of_elaboration_phase(uvm_phase phase);  trace(this, phase); endfunction
+    function void start_of_simulation_phase(uvm_phase phase); trace(this, phase); endfunction
+    task          run_phase(uvm_phase phase);                 trace(this, phase); endtask
+    function void extract_phase(uvm_phase phase);             trace(this, phase); endfunction
+    function void check_phase(uvm_phase phase);               trace(this, phase); endfunction
+    function void report_phase(uvm_phase phase);              trace(this, phase); endfunction
+    function void final_phase(uvm_phase phase);               trace(this, phase); endfunction
+  endclass
+
+  // Aquí irán las clases de las prácticas siguientes
+endpackage</code></pre>
+
+<p class="file"><code>tb_top.sv</code></p>
+<pre><code class="language-verilog">`timescale 1ns/1ps
+module tb_top;
+  import uvm_pkg::*;
+  import phases_lab_pkg::*;
+  initial run_test();
+endmodule</code></pre>
+<p>Ejecuta con <code>+UVM_TESTNAME=phases_test</code>. La jerarquía es: <code>uvm_test_top</code> → <code>env</code> → {<code>agt</code> → {<code>drv</code>, <code>mon</code>}, <code>scb</code>}.</p>
+
+<h3>5.2 Tareas</h3>
+<ol>
+  <li>Completa TODO 1.</li>
+  <li>Antes de simular, escribe en la tabla el orden en que crees que aparecerán los seis componentes en cada fase.</li>
+  <li>Simula y compara. Anota también el tiempo de simulación de cada línea.</li>
+  <li><strong>Experimento A</strong>: en <code>tracer::connect_phase</code> añade <code>#10ns;</code>. ¿Qué ocurre?</li>
+  <li><strong>Experimento B</strong>: en <code>trc_env::connect_phase</code> (sobrescríbela) crea un componente extra: <code>tracer::type_id::create("extra", this)</code>. ¿Qué ocurre?</li>
+  <li><strong>Experimento C</strong>: quita la llamada a <code>super.build_phase(phase)</code> en <code>trc_agent</code>. ¿Qué línea desaparece del log? ¿Se siguen creando <code>drv</code> y <code>mon</code>?</li>
+</ol>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Fase</th><th>Tu predicción (orden de componentes)</th><th>Resultado</th></tr></thead>
+<tbody>
+<tr><td><code>build</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>connect</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>end_of_elaboration</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>run</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>report</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>final</code></td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+
+<details class="solution">
+<summary>5.3 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 1
+drv = tracer::type_id::create("drv", this);
+mon = tracer::type_id::create("mon", this);</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Fase</th><th>Orden observado</th><th>Por qué</th></tr></thead>
+<tbody>
+<tr><td><code>build</code></td><td>test, env, agt, drv, mon, scb</td><td>Arriba abajo (pre-orden); hermanos por orden alfabético: <code>agt</code> antes que <code>scb</code></td></tr>
+<tr><td><code>connect</code>, <code>end_of_elaboration</code>, <code>start_of_simulation</code></td><td>drv, mon, agt, scb, env, test</td><td>Abajo arriba (post-orden): un componente después de todos sus descendientes</td></tr>
+<tr><td><code>run</code></td><td>Los seis a 0 ns, en un orden no garantizado</td><td>Las tareas de fase arrancan en paralelo</td></tr>
+<tr><td><code>extract</code>, <code>check</code>, <code>report</code></td><td>drv, mon, agt, scb, env, test</td><td>Abajo arriba</td></tr>
+<tr><td><code>final</code></td><td>test, env, agt, drv, mon, scb</td><td>Arriba abajo, igual que <code>build</code></td></tr>
+</tbody></table></div>
+<p>Todas las líneas aparecen a 0 ns: nadie levanta objeciones, así que <code>run_phase</code> termina en el mismo instante en que empieza. Lo arreglarás en la Práctica 2.</p>
+<ul>
+  <li><strong>A</strong>: error de compilación: una función no puede contener controles de tiempo.</li>
+  <li><strong>B</strong>: <code>uvm_fatal</code> indicando que no se pueden crear componentes después de <code>build_phase</code> (ID <code>ILLCRT</code> en UVM 1.2).</li>
+  <li><strong>C</strong>: desaparece la línea <code>build</code> de <code>uvm_test_top.env.agt</code>, pero <code>drv</code> y <code>mon</code> se siguen creando porque el código de creación está en <code>trc_agent</code>. En una jerarquía real, olvidar <code>super.build_phase</code> puede impedir que se construya lo que define la clase base o que se aplique la configuración automática.</li>
+</ul>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 6 -->
+<section id="s6">
+<h2>6. Práctica 2: objeciones y fin de simulación</h2>
+<p>Objetivo: controlar cuándo termina <code>run_phase</code> y entender qué pasa con los procesos que siguen vivos, con el tiempo de drenaje y con el timeout.</p>
+
+<h3>6.1 Código</h3>
+<p>Añade al paquete un driver que trabaja indefinidamente y un test con objeción:</p>
+<pre><code class="language-verilog">class busy_driver extends tracer;
+  `uvm_component_utils(busy_driver)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  task run_phase(uvm_phase phase);
+    super.run_phase(phase);
+    forever begin
+      #20ns `uvm_info("DRV", "tic", UVM_LOW)
+    end
+  endtask
+endclass
+
+class obj_test extends phases_test;
+  `uvm_component_utils(obj_test)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  function void build_phase(uvm_phase phase);
+    // El agente creará busy_driver en lugar de tracer para "drv"
+    set_inst_override_by_type("env.agt.drv", tracer::get_type(), busy_driver::get_type());
+    super.build_phase(phase);
+  endfunction
+
+  task run_phase(uvm_phase phase);
+    super.run_phase(phase);
+    // TODO 2: levanta una objeción, espera 100 ns y retírala
+  endtask
+endclass</code></pre>
+
+<h3>6.2 Tareas</h3>
+<p>Ejecuta <code>+UVM_TESTNAME=obj_test</code>. Para cada experimento, parte del TODO 2 resuelto, aplica solo el cambio indicado y anota a qué tiempo empieza <code>extract_phase</code> y cuántos <code>tic</code> imprime el driver.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Cambio</th><th>Predicción</th><th>Resultado</th></tr></thead>
+<tbody>
+<tr><td>E0</td><td>Ninguno (TODO 2 resuelto)</td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E1</td><td>Comenta <code>raise_objection</code> y <code>drop_objection</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E2</td><td>Añade antes del <code>drop</code>: <code>phase.get_objection().set_drain_time(this, 30ns);</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E3</td><td>En <code>busy_driver</code>, rodea cada <code>tic</code> con una objeción: <code>raise</code>, <code>#30ns tic</code>, <code>drop</code>, <code>#10ns</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E4</td><td>Cambia la espera del test a <code>#1ms</code> y ejecuta con <code>+UVM_TIMEOUT=500ns,YES</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E5</td><td>Llama a <code>drop_objection</code> dos veces seguidas</td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+<p>Repite E0 con <code>+UVM_OBJECTION_TRACE</code> y localiza en el log las líneas de <code>raise</code>, <code>drop</code> y <code>all_dropped</code>.</p>
+
+<details class="solution">
+<summary>6.3 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 2
+phase.raise_objection(this, "Estímulo de 100 ns");
+#100ns;
+phase.drop_objection(this, "Estímulo terminado");</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>extract a</th><th>Ticks</th><th>Por qué</th></tr></thead>
+<tbody>
+<tr><td>E0</td><td>100 ns</td><td>4 o 5</td><td>La fase termina al retirar la última objeción y el <code>forever</code> del driver se mata. El tic de 100 ns puede aparecer o no según el orden de los procesos en ese instante: no dependas de ello</td></tr>
+<tr><td>E1</td><td>0 ns</td><td>0</td><td>Sin objeciones, <code>run_phase</code> termina en cuanto empieza</td></tr>
+<tr><td>E2</td><td>130 ns</td><td>6</td><td>El drenaje alarga la fase 30 ns desde que el contador llega a cero</td></tr>
+<tr><td>E3</td><td>110 ns</td><td>3</td><td>A los 100 ns el driver mantiene su objeción (transacción de 80 a 110 ns); la fase termina cuando la retira</td></tr>
+<tr><td>E4</td><td>No se llega</td><td>~25</td><td><code>uvm_fatal</code> por timeout a los 500 ns (ID <code>PH_TIMEOUT</code>)</td></tr>
+<tr><td>E5</td><td>100 ns</td><td>4 o 5</td><td>Error de UVM: el contador de objeciones no puede bajar de cero (ID <code>OBJTN_ZERO</code>)</td></tr>
+</tbody></table></div>
+<p>Con <code>+UVM_OBJECTION_TRACE</code> verás cada objeción propagarse hacia arriba por la jerarquía hasta <code>uvm_top</code>: el contador que decide el fin de fase es el total de la raíz.</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 7 -->
+<section id="s7">
+<h2>7. Práctica 3: fases de tiempo de ejecución y sincronización</h2>
+<p>Objetivo: comprobar que las 12 fases de ejecución sincronizan a todos los componentes y que corren en paralelo con <code>run_phase</code>.</p>
+
+<h3>7.1 Código</h3>
+<pre><code class="language-verilog">// Componente cuya duración en cada fase es configurable
+class rt_comp extends uvm_component;
+  `uvm_component_utils(rt_comp)
+  int unsigned reset_ns = 50, main_ns = 100, shutdown_ns = 0;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  task reset_phase(uvm_phase phase);    busy(phase, reset_ns);    endtask
+  task main_phase(uvm_phase phase);     busy(phase, main_ns);     endtask
+  task shutdown_phase(uvm_phase phase); busy(phase, shutdown_ns); endtask
+
+  task busy(uvm_phase phase, int unsigned ns);
+    if (ns == 0) return;
+    phase.raise_objection(this);
+    `uvm_info("RT", $sformatf("%s: empiezo (%0d ns)", phase.get_name(), ns), UVM_LOW)
+    #(ns * 1ns);
+    `uvm_info("RT", $sformatf("%s: termino", phase.get_name()), UVM_LOW)
+    phase.drop_objection(this);
+  endtask
+endclass
+
+class rt_test extends uvm_test;
+  `uvm_component_utils(rt_test)
+  rt_comp a, b;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  function void build_phase(uvm_phase phase);
+    a = rt_comp::type_id::create("a", this);
+    b = rt_comp::type_id::create("b", this);
+    a.reset_ns = 50; a.main_ns = 100; a.shutdown_ns = 20;
+    b.reset_ns = 30; b.main_ns = 300; b.shutdown_ns = 0;
+  endfunction
+
+  // Traza global: el test pertenece al mismo schedule que a y b
+  function void phase_started(uvm_phase phase);
+    `uvm_info("PH", {"Empieza ", phase.get_name()}, UVM_LOW)
+  endfunction
+  function void phase_ended(uvm_phase phase);
+    `uvm_info("PH", {"Termina ", phase.get_name()}, UVM_LOW)
+  endfunction
+endclass</code></pre>
+
+<h3>7.2 Tareas</h3>
+<ol>
+  <li>Antes de simular, rellena la columna de predicción con el tiempo de inicio y fin de cada fase.</li>
+  <li>Ejecuta <code>+UVM_TESTNAME=rt_test</code> y compara.</li>
+  <li><strong>Experimento F</strong>: añade al test un <code>run_phase</code> que levante una objeción durante 500 ns. ¿Cuándo empieza ahora <code>extract</code>? ¿Y <code>post_shutdown</code>?</li>
+  <li><strong>Experimento G</strong>: pon <code>b.main_ns = 0</code>. ¿Cuándo termina <code>main</code>?</li>
+  <li><strong>Experimento H</strong>: en <code>busy()</code>, comenta <code>raise_objection</code> y <code>drop_objection</code>. ¿Qué mensajes <code>termino</code> llegan a imprimirse y por qué?</li>
+</ol>
+<div class="table-wrap"><table>
+<thead><tr><th>Fase</th><th>Predicción inicio / fin</th><th>Resultado</th></tr></thead>
+<tbody>
+<tr><td><code>run</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>pre_reset</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>reset</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>post_reset</code> a <code>pre_main</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>main</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>post_main</code>, <code>pre_shutdown</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>shutdown</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>post_shutdown</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>extract</code></td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+
+<details class="solution">
+<summary>7.3 Solución</summary>
+<div class="body">
+<div class="table-wrap"><table>
+<thead><tr><th>Fase</th><th>Inicio / fin</th><th>Por qué</th></tr></thead>
+<tbody>
+<tr><td><code>run</code></td><td>0 / 0 ns</td><td>Nadie levanta objeciones en <code>run_phase</code></td></tr>
+<tr><td><code>pre_reset</code></td><td>0 / 0 ns</td><td>Sin objeciones</td></tr>
+<tr><td><code>reset</code></td><td>0 / 50 ns</td><td><code>b</code> termina a 30 ns pero espera a <code>a</code>, que termina a 50</td></tr>
+<tr><td><code>post_reset</code> a <code>pre_main</code></td><td>50 / 50 ns</td><td>Seis fases sin objeciones, de duración cero</td></tr>
+<tr><td><code>main</code></td><td>50 / 350 ns</td><td><code>a</code> termina a 150 ns; <code>b</code> a 350 ns. Ambos empiezan a la vez</td></tr>
+<tr><td><code>post_main</code>, <code>pre_shutdown</code></td><td>350 / 350 ns</td><td>Sin objeciones</td></tr>
+<tr><td><code>shutdown</code></td><td>350 / 370 ns</td><td>Solo <code>a</code> trabaja, 20 ns</td></tr>
+<tr><td><code>post_shutdown</code></td><td>370 / 370 ns</td><td>Sin objeciones</td></tr>
+<tr><td><code>extract</code></td><td>370 ns</td><td>Espera a que acaben <code>run</code> (0 ns) y <code>post_shutdown</code> (370 ns)</td></tr>
+</tbody></table></div>
+<ul>
+  <li><strong>F</strong>: <code>post_shutdown</code> sigue terminando a 370 ns, pero <code>extract</code> empieza a 500 ns: espera también a <code>run_phase</code>.</li>
+  <li><strong>G</strong>: <code>main</code> termina a 150 ns, cuando <code>a</code> retira su objeción; todo el resto se adelanta 200 ns.</li>
+  <li><strong>H</strong>: solo se imprimen los <code>empiezo</code>, ningún <code>termino</code>. Sin objeciones, cada fase termina enseguida y UVM mata el proceso de <code>busy()</code> antes de que acabe su espera. Es el error más común con las fases de ejecución.</li>
+</ul>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 8 -->
+<section id="s8">
+<h2>8. Práctica 4: callbacks de fase y objeciones en secuencias</h2>
+<p>Objetivo: retrasar el fin de fase hasta que un scoreboard termine su trabajo, y dejar que las secuencias gestionen sus propias objeciones.</p>
+
+<h3>8.1 Parte A: phase_ready_to_end</h3>
+<pre><code class="language-verilog">// Scoreboard con trabajo pendiente: procesa una transacción cada 40 ns
+class lazy_scb extends uvm_component;
+  `uvm_component_utils(lazy_scb)
+  int unsigned pending = 5;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  task run_phase(uvm_phase phase);
+    while (pending > 0) begin
+      #40ns pending--;
+      `uvm_info("SCB", $sformatf("pendientes = %0d", pending), UVM_LOW)
+    end
+  endtask
+
+  function void phase_ready_to_end(uvm_phase phase);
+    if (phase.get_name() != "run") return;
+    // TODO 3: si quedan transacciones pendientes, levanta una objeción
+    //         y retírala (en un proceso aparte) cuando pending llegue a 0
+  endfunction
+endclass
+
+class rte_test extends uvm_test;
+  `uvm_component_utils(rte_test)
+  lazy_scb scb;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void build_phase(uvm_phase phase);
+    scb = lazy_scb::type_id::create("scb", this);
+  endfunction
+  task run_phase(uvm_phase phase);
+    phase.raise_objection(this, "Estímulo");
+    #100ns;
+    phase.drop_objection(this, "Estímulo");
+  endtask
+  function void check_phase(uvm_phase phase);
+    if (scb.pending != 0) `uvm_error("CHK", $sformatf("Quedan %0d transacciones", scb.pending))
+  endfunction
+endclass</code></pre>
+<p>Tareas: ejecuta <code>rte_test</code> sin completar TODO 3 y observa el error de <code>check_phase</code>. Después completa TODO 3: el test debe terminar sin errores y <code>extract</code> debe empezar a 200 ns.</p>
+
+<h3>8.2 Parte B: objeciones automáticas en una secuencia</h3>
+<pre><code class="language-verilog">class p_item extends uvm_sequence_item;
+  `uvm_object_utils(p_item)
+  int unsigned id;
+  function new(string name = "p_item"); super.new(name); endfunction
+endclass
+
+class p_driver extends uvm_driver #(p_item);
+  `uvm_component_utils(p_driver)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  task run_phase(uvm_phase phase);
+    forever begin
+      seq_item_port.get_next_item(req);
+      #20ns `uvm_info("DRV", $sformatf("item %0d", req.id), UVM_LOW)
+      seq_item_port.item_done();
+    end
+  endtask
+endclass
+
+class p_seq extends uvm_sequence #(p_item);
+  `uvm_object_utils(p_seq)
+  function new(string name = "p_seq");
+    super.new(name);
+    // TODO 4: activa la objeción automática de fase
+  endfunction
+  task body();
+    for (int i = 0; i &lt; 5; i++) begin
+      req = p_item::type_id::create("req");
+      start_item(req);
+      req.id = i;
+      finish_item(req);
+    end
+  endtask
+endclass
+
+class seq_obj_test extends uvm_test;
+  `uvm_component_utils(seq_obj_test)
+  p_driver                drv;
+  uvm_sequencer #(p_item) sqr;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void build_phase(uvm_phase phase);
+    drv = p_driver::type_id::create("drv", this);
+    sqr = uvm_sequencer #(p_item)::type_id::create("sqr", this);
+  endfunction
+  function void connect_phase(uvm_phase phase);
+    drv.seq_item_port.connect(sqr.seq_item_export);
+  endfunction
+  task main_phase(uvm_phase phase);
+    p_seq seq = p_seq::type_id::create("seq");
+    // TODO 5: indica a la secuencia su fase de arranque y lánzala en sqr
+  endtask
+endclass</code></pre>
+<p>Tareas: completa TODO 4 y 5. Verifica que se envían los cinco items y que <code>main</code> termina a 100 ns sin ninguna objeción en el test. Después comenta TODO 4 y explica el resultado.</p>
+
+<h3>8.3 Parte C: traza de fases</h3>
+<p>Añade a <code>seq_obj_test</code> los métodos <code>phase_started</code> y <code>phase_ended</code> de la Práctica 3 y ejecuta también con <code>+UVM_PHASE_TRACE</code>. Compara la información que da cada mecanismo.</p>
+
+<details class="solution">
+<summary>8.4 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 3
+if (pending > 0) begin
+  phase.raise_objection(this, "Scoreboard con pendientes");
+  fork begin
+    wait (pending == 0);
+    phase.drop_objection(this, "Scoreboard vacío");
+  end join_none
+end
+
+// TODO 4
+set_automatic_phase_objection(1);
+
+// TODO 5
+seq.set_starting_phase(phase);
+seq.start(sqr);</code></pre>
+<ul>
+  <li><strong>Parte A</strong>: sin TODO 3, la fase termina a 100 ns con 3 transacciones pendientes y <code>check_phase</code> informa el error. Con TODO 3, al llegar a cero la objeción del test, el scoreboard levanta la suya y la retira a 200 ns (5 × 40 ns). UVM vuelve a llamar a <code>phase_ready_to_end</code>; como <code>pending</code> ya es 0, no se levanta nada y la fase termina.</li>
+  <li><strong>Parte B</strong>: con la objeción automática, <code>main</code> dura 100 ns (5 × 20 ns). Sin ella, nadie objeta en <code>main_phase</code>: la fase termina enseguida, el proceso que ejecuta <code>seq.start</code> se mata y no se envía ningún item (o, como mucho, el primero queda a medias).</li>
+  <li><strong>Parte C</strong>: <code>phase_started</code>/<code>phase_ended</code> dan una traza a medida, solo desde el componente que los implementa. <code>+UVM_PHASE_TRACE</code> describe la máquina de estados interna de cada fase (scheduled, started, executing, ready to end, ended…): más ruidosa, pero útil cuando una fase no avanza.</li>
+</ul>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 9 -->
+<section id="s9">
+<h2>9. Práctica 5: saltos de fase y depuración</h2>
+<p>Objetivo: aplicar un reset en caliente con <code>phase.jump()</code> y diagnosticar los errores de fases más frecuentes.</p>
+
+<h3>9.1 Parte A: reset en caliente</h3>
+<pre><code class="language-verilog">class jump_test extends uvm_test;
+  `uvm_component_utils(jump_test)
+  rt_comp a;
+  bit     jumped;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  function void build_phase(uvm_phase phase);
+    a = rt_comp::type_id::create("a", this);
+    a.reset_ns = 50; a.main_ns = 200; a.shutdown_ns = 0;
+  endfunction
+
+  task main_phase(uvm_phase phase);
+    if (jumped) return;
+    #70ns;
+    jumped = 1;
+    `uvm_info("JUMP", "Reset en caliente: vuelvo a reset_phase", UVM_LOW)
+    // TODO 6: salta a reset_phase
+  endtask
+
+  function void phase_started(uvm_phase phase);
+    `uvm_info("PH", {"Empieza ", phase.get_name()}, UVM_LOW)
+  endfunction
+endclass</code></pre>
+<p>Tareas: completa TODO 6 y predice a qué tiempos empiezan cada <code>reset</code> y cada <code>main</code>, y cuándo empieza <code>extract</code>. ¿Se imprime el <code>termino</code> del primer <code>main</code> de <code>a</code>? ¿Qué pasaría si no existiera la variable <code>jumped</code>?</p>
+
+<h3>9.2 Parte B: cacería de errores</h3>
+<pre><code class="language-verilog">class debug_test extends uvm_test;
+  `uvm_component_utils(debug_test)
+  rt_comp a;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  function void build_phase(uvm_phase phase);
+    a = rt_comp::type_id::create("a", this);
+    a.main_ns = 0;               // a solo trabaja en reset (50 ns)
+  endfunction
+
+`ifdef BUG2
+  function void connect_phase(uvm_phase phase);
+    #10ns;
+  endfunction
+`endif
+
+  task main_phase(uvm_phase phase);
+`ifndef BUG1
+    phase.raise_objection(this, "Estímulo");
+`endif
+    repeat (10) begin
+      #20ns `uvm_info("STIM", "transacción", UVM_LOW)
+    end
+`ifndef BUG1
+    phase.drop_objection(this, "Estímulo");
+`endif
+  endtask
+
+  task run_phase(uvm_phase phase);
+    phase.raise_objection(this, "Tiempo mínimo");
+`ifdef BUG3
+    begin
+      rt_comp late = rt_comp::type_id::create("late", this);
+    end
+`endif
+    #300ns;
+    phase.drop_objection(this, "Tiempo mínimo");
+`ifdef BUG4
+    phase.drop_objection(this, "Tiempo mínimo");
+`endif
+  endtask
+endclass</code></pre>
+<p>Sin errores, <code>main</code> va de 50 a 250 ns con diez transacciones, y <code>extract</code> empieza a 300 ns. Compila con <code>+define+BUGn</code>, simula con <code>+UVM_PHASE_TRACE +UVM_OBJECTION_TRACE</code> y rellena la tabla.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Error</th><th>Síntoma</th><th>Causa</th><th>Corrección</th></tr></thead>
+<tbody>
+<tr><td>BUG1</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG2</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG3</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG4</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+<p>Pregunta: en BUG1 la simulación dura los mismos 300 ns que sin error. ¿Por qué es este el más peligroso de los cuatro?</p>
+
+<details class="solution">
+<summary>9.3 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 6
+phase.jump(uvm_reset_phase::get());</code></pre>
+<p>Parte A: primer <code>reset</code> de 0 a 50 ns; primer <code>main</code> desde 50 ns; salto a 120 ns (50 + 70); segundo <code>reset</code> de 120 a 170 ns; segundo <code>main</code> de 170 a 370 ns; <code>extract</code> a 370 ns. El <code>termino</code> del primer <code>main</code> de <code>a</code> no se imprime: el salto mata su proceso y descarta su objeción. Sin <code>jumped</code>, cada <code>main</code> volvería a saltar a los 70 ns y la simulación nunca terminaría (hasta el timeout).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Error</th><th>Síntoma</th><th>Causa</th><th>Corrección</th></tr></thead>
+<tbody>
+<tr><td>BUG1</td><td>No aparece ninguna línea <code>STIM</code>; la simulación igualmente dura 300 ns</td><td><code>main_phase</code> sin objeción termina enseguida y su proceso se mata; la objeción de <code>run_phase</code> no la protege</td><td>Levantar la objeción en la misma fase donde está el estímulo</td></tr>
+<tr><td>BUG2</td><td>Error de compilación</td><td>Control de tiempo dentro de una fase función</td><td>Mover el código que consume tiempo a una fase tarea</td></tr>
+<tr><td>BUG3</td><td><code>uvm_fatal</code> a 0 ns (<code>ILLCRT</code>)</td><td>Creación de un componente después de <code>build_phase</code></td><td>Crear todos los componentes en <code>build_phase</code></td></tr>
+<tr><td>BUG4</td><td><code>UVM_ERROR</code> a 300 ns (<code>OBJTN_ZERO</code>)</td><td>Se retira una objeción que no estaba levantada</td><td>Emparejar cada <code>raise</code> con un único <code>drop</code></td></tr>
+</tbody></table></div>
+<p>Respuesta: BUG1 no produce ningún error ni aviso; la simulación pasa, pero no se ha enviado estímulo. Un test así da PASS sin verificar nada. Protégete con comprobaciones en <code>check_phase</code> (por ejemplo, número mínimo de transacciones vistas por el monitor).</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 10 -->
+<section id="s10">
+<h2>10. Evaluación y buenas prácticas</h2>
+<p>Responde las diez preguntas sin consultar el laboratorio; si fallas más de dos, repasa las Secciones 3 y 4 y repite la Práctica 3.</p>
+
+<h3>10.1 Preguntas</h3>
+<ol>
+  <li>¿Qué fases comunes se recorren de arriba abajo?</li>
+  <li>¿Por qué <code>build_phase</code> tiene que ser de arriba abajo?</li>
+  <li>¿Qué fases son tareas?</li>
+  <li>Un test no levanta ninguna objeción y ningún componente usa fases de ejecución. ¿Cuándo empieza <code>extract_phase</code>?</li>
+  <li>En <code>main_phase</code>, el componente A trabaja 100 ns y el B 300 ns, empezando ambos a 0. ¿Cuándo empieza <code>post_main_phase</code> para A?</li>
+  <li><code>run_phase</code> se mantiene hasta 500 ns y <code>post_shutdown_phase</code> termina a 370 ns. ¿Cuándo empieza <code>extract_phase</code>?</li>
+  <li>¿Para qué sirve el tiempo de drenaje y qué ocurre si alguien levanta una objeción durante él?</li>
+  <li>Da un caso de uso de <code>phase_ready_to_end</code>.</li>
+  <li>¿Por qué no se debe levantar una objeción permanente en un monitor?</li>
+  <li>¿Qué les pasa a los procesos y objeciones de la fase actual cuando se ejecuta <code>phase.jump()</code>?</li>
+</ol>
+
+<details class="solution">
+<summary>10.2 Respuestas</summary>
+<div class="body">
+<ol>
+  <li><code>build_phase</code> y <code>final_phase</code>.</li>
+  <li>Porque un componente solo existe después de que su padre lo cree, y porque el padre debe publicar la configuración antes de que el hijo la lea.</li>
+  <li><code>run_phase</code> y las 12 fases de ejecución (de <code>pre_reset</code> a <code>post_shutdown</code>).</li>
+  <li>A tiempo 0: todas las fases tarea terminan en cuanto empiezan.</li>
+  <li>A 300 ns: la siguiente fase empieza a la vez para todos cuando termina el más lento.</li>
+  <li>A 500 ns: <code>extract</code> espera a que terminen las dos ramas.</li>
+  <li>Alarga el fin de fase un tiempo fijo después de que el contador llegue a cero, para que las últimas transacciones lleguen al monitor y al scoreboard. Si alguien levanta una objeción durante el drenaje, este se cancela y vuelve a empezar cuando el contador caiga de nuevo a cero.</li>
+  <li>Un scoreboard que aún tiene transacciones esperadas sin comparar levanta una objeción y la retira cuando su cola se vacía.</li>
+  <li>Porque un monitor con <code>forever</code> nunca termina su trabajo: la fase no acabaría nunca y la simulación terminaría por timeout.</li>
+  <li>Los procesos de la fase actual se matan y sus objeciones se descartan; la ejecución continúa en la fase de destino.</li>
+</ol>
+</div>
+</details>
+
+<h3>10.3 Buenas prácticas</h3>
+<ul>
+  <li>Crea componentes y lee configuración en <code>build_phase</code>; conecta en <code>connect_phase</code>; consume tiempo solo en fases tarea.</li>
+  <li>Llama siempre a <code>super.&lt;fase&gt;_phase(phase)</code> cuando extiendas una clase propia.</li>
+  <li>Levanta objeciones en el test o en las secuencias de nivel superior, con una descripción, y empareja cada <code>raise</code> con un <code>drop</code>.</li>
+  <li>Levanta la objeción en la misma fase donde está el código que debe protegerse.</li>
+  <li>Usa <code>set_automatic_phase_objection(1)</code> en secuencias que se lanzan como secuencias de fase.</li>
+  <li>Usa tiempo de drenaje o <code>phase_ready_to_end</code> para dejar que el scoreboard termine, no objeciones permanentes.</li>
+  <li>Fija un timeout realista en el test base.</li>
+  <li>Comprueba en <code>check_phase</code> que el test realmente generó tráfico: un test sin estímulo no debe dar PASS.</li>
+  <li>Prefiere <code>run_phase</code> para drivers y monitores; usa las fases de ejecución cuando necesites sincronizar etapas entre componentes o resets en caliente.</li>
+  <li>Ten a mano <code>+UVM_PHASE_TRACE</code> y <code>+UVM_OBJECTION_TRACE</code> para cualquier problema de fin de simulación.</li>
+</ul>
+
+<h3>10.4 Referencias</h3>
+<ul>
+  <li>IEEE Std 1800.2, <em>Standard for Universal Verification Methodology Language Reference Manual</em>, capítulos sobre fases (<code>uvm_phase</code>, <code>uvm_domain</code>) y objeciones (<code>uvm_objection</code>).</li>
+  <li>Accellera, <em>UVM 1.2 Class Reference</em> y su código fuente (<code>uvm_phase.svh</code>, <code>uvm_common_phases.svh</code>, <code>uvm_runtime_phases.svh</code>, <code>uvm_objection.svh</code>).</li>
+  <li>Verification Academy (Siemens EDA), <em>UVM Cookbook</em>, secciones sobre fases y fin de test.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/verilog.min.js"></script>
+<script>
+  if (window.hljs) { hljs.highlightAll(); }
+</script>
+</body>
+</html>

@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio guiado: UVM reporting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #18232e; --ink-soft: #4a5866; --paper: #fbfcfb; --panel: #eef3f0; --rule: #d3ddd8;
+    --mask: #1e5b46; --pad: #a87b1f; --code-bg: #10261f; --code-ink: #dbe8e1;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e4ebe7; --ink-soft: #a4b2ab; --paper: #121a17; --panel: #1a2621;
+      --rule: #2d3d36; --mask: #6fbf9c; --pad: #d9b25a; --code-bg: #0b1814; --code-ink: #dbe8e1;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1.0625rem/1.65 var(--sans); }
+  a { color: var(--mask); }
+  a:focus-visible, summary:focus-visible, button:focus-visible { outline: 2px solid var(--pad); outline-offset: 3px; border-radius: 2px; }
+
+  .layout { display: grid; grid-template-columns: 17rem minmax(0, 1fr); max-width: 78rem; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 2.5rem 1.5rem 2rem 1.75rem; border-right: 1px solid var(--rule); font-size: 0.92rem;
+  }
+  nav.toc p { margin: 0 0 0.75rem; font-weight: 600; color: var(--ink-soft); }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; }
+  nav.toc li { margin: 0.15rem 0; }
+  nav.toc a { display: block; padding: 0.3rem 0.5rem; border-left: 2px solid transparent; color: var(--ink); text-decoration: none; line-height: 1.35; }
+  nav.toc a:hover { border-left-color: var(--pad); background: var(--panel); }
+
+  main { padding: 2.5rem clamp(1.25rem, 4vw, 3.5rem) 5rem; min-width: 0; }
+  .measure { max-width: 46rem; }
+
+  header.title { margin-bottom: 3rem; padding-bottom: 1.5rem; border-bottom: 3px solid var(--mask); position: relative; }
+  header.title::after { content: ""; position: absolute; left: 0; bottom: -3px; width: 4.5rem; height: 3px; background: var(--pad); }
+  header.title h1 { font-size: clamp(2rem, 4.2vw, 2.9rem); line-height: 1.1; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 0.75rem; }
+  header.title .byline { color: var(--ink-soft); margin: 0; }
+
+  h2 { font-size: 1.6rem; line-height: 1.25; font-weight: 600; margin: 4rem 0 1rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.2rem; font-weight: 600; margin: 2.25rem 0 0.6rem; color: var(--mask); }
+  p, ul, ol { margin: 0 0 1rem; }
+  li { margin: 0.25rem 0; }
+
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--panel); padding: 0.08em 0.32em; border-radius: 3px; }
+  pre {
+    margin: 0 0 1.25rem; padding: 1.1rem 1.25rem; overflow-x: auto;
+    background: var(--code-bg); color: var(--code-ink);
+    border-left: 3px solid var(--pad); border-radius: 0 4px 4px 0; font-size: 0.86rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.5rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+  th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--rule); }
+  thead th { background: var(--panel); font-weight: 600; border-bottom: 2px solid var(--mask); }
+  td.blank { min-width: 7rem; }
+
+  .file { font-weight: 600; margin: 1.5rem 0 0.4rem; }
+  .file code { background: none; padding: 0; font-size: 0.95em; }
+
+  .flow {
+    margin: 0 0 1.5rem; padding: 1rem 1.25rem; background: var(--panel);
+    border-radius: 4px; font-family: var(--mono); font-size: 0.82rem; line-height: 1.6;
+    white-space: pre; overflow-x: auto;
+  }
+
+  details.solution { margin: 1.5rem 0 2rem; border: 1px solid var(--rule); border-left: 3px solid var(--mask); border-radius: 0 4px 4px 0; }
+  details.solution > summary {
+    cursor: pointer; padding: 0.8rem 1.1rem; font-weight: 600; color: var(--mask);
+    list-style: none; display: flex; align-items: center; gap: 0.6rem;
+  }
+  details.solution > summary::-webkit-details-marker { display: none; }
+  details.solution > summary::before {
+    content: "+"; display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem;
+    border: 1.5px solid currentColor; border-radius: 3px; font-family: var(--mono); line-height: 1;
+  }
+  details.solution[open] > summary::before { content: "\2212"; }
+  details.solution > .body { padding: 0 1.1rem 0.5rem; }
+
+  .print-btn { font: 500 0.9rem var(--sans); color: var(--mask); background: none; cursor: pointer; border: 1px solid var(--rule); border-radius: 3px; padding: 0.35rem 0.7rem; margin-top: 1rem; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); padding: 1.5rem 1.25rem; }
+  }
+  @media print {
+    nav.toc, .print-btn { display: none; }
+    .layout { display: block; }
+    pre { white-space: pre-wrap; border: 1px solid #999; background: #f4f4f4; color: #000; }
+  }
+  .hljs-keyword, .hljs-built_in { color: #8fd3b4; }
+  .hljs-type { color: #9cc7e8; }
+  .hljs-string { color: #e6c37a; }
+  .hljs-number, .hljs-literal { color: #f0a58a; }
+  .hljs-comment { color: #7f978c; font-style: italic; }
+  .hljs-meta { color: #c7a8e8; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="Contenido">
+  <p>Contenido</p>
+  <ol>
+    <li><a href="#s1">1. Introducción y objetivos</a></li>
+    <li><a href="#s2">2. Teoría I: mensajes, severidad y verbosidad</a></li>
+    <li><a href="#s3">3. Teoría II: control jerárquico y acciones</a></li>
+    <li><a href="#s4">4. Teoría III: catchers y report server</a></li>
+    <li><a href="#s5">5. Testbench base</a></li>
+    <li><a href="#s6">6. Práctica 1: macros y verbosidad</a></li>
+    <li><a href="#s7">7. Práctica 2: control jerárquico</a></li>
+    <li><a href="#s8">8. Práctica 3: acciones, severidad y ficheros</a></li>
+    <li><a href="#s9">9. Práctica 4: report catchers</a></li>
+    <li><a href="#s10">10. Práctica 5: report server y depuración</a></li>
+    <li><a href="#s11">11. Evaluación y buenas prácticas</a></li>
+  </ol>
+  <button class="print-btn" type="button" onclick="document.querySelectorAll('details').forEach(d=>d.open=true);window.print()">Imprimir con soluciones</button>
+</nav>
+
+<main>
+<div class="measure">
+
+<header class="title">
+  <h1>Laboratorio guiado: UVM reporting</h1>
+  <p class="byline">1 de octubre de 2026</p>
+</header>
+
+<!-- ===================================================== 1 -->
+<section id="s1">
+<h2>1. Introducción y objetivos</h2>
+<p>Al terminar este laboratorio sabrás emitir mensajes con la severidad y verbosidad adecuadas, filtrar el log por componente, por ID y desde la línea de comandos, cambiar qué hace UVM con cada mensaje, interceptar mensajes esperados en tests negativos y decidir PASS o FAIL a partir del resumen final. El laboratorio dura unas 4 horas: 1 hora de teoría y 5 prácticas sobre un testbench sin DUT cuyos componentes generan mensajes deterministas.</p>
+
+<p><strong>Objetivos de aprendizaje</strong></p>
+<ol>
+  <li>Usar <code>`uvm_info</code>, <code>`uvm_warning</code>, <code>`uvm_error</code> y <code>`uvm_fatal</code> con IDs y verbosidades coherentes.</li>
+  <li>Explicar por qué las macros son preferibles a las funciones <code>uvm_report_*</code>.</li>
+  <li>Controlar la verbosidad global, por componente, por subárbol y por ID, desde código y desde la línea de comandos.</li>
+  <li>Cambiar la acción y la severidad de un mensaje, limitar el número de errores y redirigir mensajes a ficheros.</li>
+  <li>Escribir un <code>uvm_report_catcher</code> para degradar, modificar o suprimir mensajes.</li>
+  <li>Consultar el report server para decidir el resultado del test y personalizar el formato de los mensajes.</li>
+</ol>
+
+<p><strong>Requisitos previos</strong></p>
+<ul>
+  <li>SystemVerilog: clases, herencia, <code>$sformatf</code>, <code>$fopen</code>/<code>$fclose</code>.</li>
+  <li>UVM básico: componentes, fases y objeciones, fábrica.</li>
+  <li>Un simulador con UVM 1.2 o IEEE 1800.2: Questa, VCS, Xcelium, Riviera-PRO o <a href="https://www.edaplayground.com">EDA Playground</a>.</li>
+</ul>
+
+<p><strong>Convenciones</strong></p>
+<ul>
+  <li>Cada práctica tiene: objetivo, código, tareas con <code>// TODO</code>, tabla de predicción y solución plegada.</li>
+  <li>Para contar mensajes usa <code>grep</code> sobre el log: por ejemplo, <code>grep -c "\[DRV\]" sim.log</code>.</li>
+  <li>Algunos mensajes internos de UVM (versión, test en ejecución) también son <code>UVM_INFO</code> y cambian según la versión; por eso las tablas de predicción se centran en tus propios IDs y en los avisos y errores.</li>
+</ul>
+</section>
+
+<!-- ===================================================== 2 -->
+<section id="s2">
+<h2>2. Teoría I: mensajes, severidad y verbosidad</h2>
+<p>Cada mensaje UVM tiene una severidad (qué tan grave es), un ID (de qué trata) y, si es informativo, una verbosidad (qué tan detallado es). UVM decide si mostrarlo comparando su verbosidad con un umbral configurable, y decide qué hacer con él según su severidad e ID: mostrarlo, contarlo, escribirlo en un fichero o terminar la simulación.</p>
+
+<h3>2.1 Las cuatro macros</h3>
+<pre><code class="language-verilog">`uvm_info   ("DRV",      $sformatf("Envío addr=0x%08h", addr), UVM_HIGH)
+`uvm_warning("CFG",      "Timeout no configurado, uso 1 ms")
+`uvm_error  ("MISMATCH", $sformatf("Esperado 0x%02h, recibido 0x%02h", exp, act))
+`uvm_fatal  ("NOVIF",    "No se encontró la interfaz virtual")</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Severidad</th><th>Significado</th><th>Verbosidad</th><th>Acción por defecto</th></tr></thead>
+<tbody>
+<tr><td><code>UVM_INFO</code></td><td>Información; no indica fallo</td><td>La que indiques</td><td><code>UVM_DISPLAY</code></td></tr>
+<tr><td><code>UVM_WARNING</code></td><td>Algo sospechoso, pero el test puede continuar y pasar</td><td><code>UVM_NONE</code> (fija)</td><td><code>UVM_DISPLAY</code></td></tr>
+<tr><td><code>UVM_ERROR</code></td><td>Fallo de verificación: el test debe fallar</td><td><code>UVM_NONE</code> (fija)</td><td><code>UVM_DISPLAY | UVM_COUNT</code></td></tr>
+<tr><td><code>UVM_FATAL</code></td><td>Imposible continuar (configuración rota, estado irrecuperable)</td><td><code>UVM_NONE</code> (fija)</td><td><code>UVM_DISPLAY | UVM_EXIT</code></td></tr>
+</tbody></table></div>
+<p>El ID es una cadena libre. Úsala como categoría estable (<code>"DRV"</code>, <code>"SCB_MISMATCH"</code>), nunca con datos variables, porque es la clave para filtrar y contar.</p>
+
+<h3>2.2 Verbosidad</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Nivel</th><th>Valor</th><th>Uso recomendado</th></tr></thead>
+<tbody>
+<tr><td><code>UVM_NONE</code></td><td>0</td><td>Mensajes que deben verse siempre (resultado del test). No lo uses para depuración: no se puede silenciar</td></tr>
+<tr><td><code>UVM_LOW</code></td><td>100</td><td>Hitos: inicio y fin de fases importantes, resúmenes</td></tr>
+<tr><td><code>UVM_MEDIUM</code></td><td>200</td><td>Una línea por transacción relevante. Umbral por defecto</td></tr>
+<tr><td><code>UVM_HIGH</code></td><td>300</td><td>Detalle por transacción en drivers y monitores</td></tr>
+<tr><td><code>UVM_FULL</code></td><td>400</td><td>Campos completos, estados internos</td></tr>
+<tr><td><code>UVM_DEBUG</code></td><td>500</td><td>Depuración intensiva</td></tr>
+</tbody></table></div>
+<p>Regla: un mensaje se procesa si <strong>su verbosidad es menor o igual que el umbral</strong> del componente para ese ID. Con el umbral por defecto (<code>UVM_MEDIUM</code>) se ven <code>NONE</code>, <code>LOW</code> y <code>MEDIUM</code>. Los mensajes filtrados no se procesan ni se cuentan en el resumen.</p>
+
+<h3>2.3 Por qué macros y no funciones</h3>
+<p>La macro <code>`uvm_info</code> se expande, de forma simplificada, así:</p>
+<pre><code class="language-verilog">if (uvm_report_enabled(UVM_HIGH, UVM_INFO, "DRV"))
+  uvm_report_info("DRV", $sformatf(...), UVM_HIGH, `uvm_file, `uvm_line);</code></pre>
+<ul>
+  <li>Comprueba la verbosidad <em>antes</em> de evaluar el mensaje: si está filtrado, <code>$sformatf</code> ni siquiera se ejecuta. Con millones de mensajes de depuración, la diferencia de rendimiento es grande.</li>
+  <li>Añade automáticamente fichero y línea de origen al mensaje.</li>
+  <li>Llamar directamente a <code>uvm_report_info(...)</code> evalúa siempre los argumentos y no añade fichero ni línea.</li>
+</ul>
+<p>Para cálculos costosos que solo sirven a un mensaje, protégelos igual: <code>if (uvm_report_enabled(UVM_FULL, UVM_INFO, "MON")) begin ... end</code>.</p>
+
+<h3>2.4 Formato de un mensaje</h3>
+<pre><code>UVM_INFO tb/rpt_pkg.sv(42) @ 30: uvm_test_top.env.agt0.mon [MON] Observo transacción 2
+│        │                 │    │                           │     └ mensaje
+│        │                 │    │                           └ ID
+│        │                 │    └ componente que lo emitió (contexto)
+│        │                 └ tiempo de simulación
+│        └ fichero(línea), se oculta con +UVM_REPORT_DISABLE_FILE_LINE
+└ severidad</code></pre>
+
+<h3>2.5 Quién emite el mensaje</h3>
+<ul>
+  <li><strong>Componentes</strong>: heredan de <code>uvm_report_object</code>; cada uno tiene su propio <em>report handler</em> con su configuración.</li>
+  <li><strong>Secuencias e items</strong>: no son componentes; sus mensajes se encaminan a través del secuenciador en el que corren (o de <code>uvm_top</code> si no tienen). Por eso la verbosidad de una secuencia se controla en su secuenciador.</li>
+  <li><strong>Objetos cualquiera</strong>: usa <code>`uvm_info_context(ID, MSG, VERB, report_object)</code> para indicar qué componente los emite.</li>
+  <li><strong>Módulos</strong>: las macros funcionan fuera de clases y usan <code>uvm_top</code>; en el log aparecen con el contexto <code>reporter</code>.</li>
+</ul>
+</section>
+
+<!-- ===================================================== 3 -->
+<section id="s3">
+<h2>3. Teoría II: control jerárquico y acciones</h2>
+<p>Cada componente guarda su propia configuración de reporting: un umbral de verbosidad, umbrales por ID, una acción por severidad e ID, y un fichero de destino. Todos los métodos de configuración tienen una variante <code>_hier</code> que se aplica al componente y a todos sus descendientes <em>existentes en ese momento</em>.</p>
+
+<h3>3.1 Métodos de verbosidad</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Método de <code>uvm_component</code></th><th>Efecto</th></tr></thead>
+<tbody>
+<tr><td><code>set_report_verbosity_level(v)</code></td><td>Umbral del componente para todos los IDs</td></tr>
+<tr><td><code>set_report_verbosity_level_hier(v)</code></td><td>Lo mismo, para el componente y sus descendientes</td></tr>
+<tr><td><code>set_report_id_verbosity(id, v)</code></td><td>Umbral para un ID concreto (tiene prioridad sobre el general)</td></tr>
+<tr><td><code>set_report_severity_id_verbosity(sev, id, v)</code></td><td>Umbral para una severidad e ID concretos</td></tr>
+<tr><td><code>get_report_verbosity_level(sev, id)</code></td><td>Consulta el umbral efectivo</td></tr>
+</tbody></table></div>
+<p>Las variantes <code>_hier</code> existen también para los métodos por ID (<code>set_report_id_verbosity_hier</code>). Desde un módulo se usa <code>uvm_top</code>: <code>uvm_top.set_report_verbosity_level_hier(UVM_HIGH)</code>.</p>
+<p><strong>Trampa importante</strong>: si llamas a un método <code>_hier</code> en <code>build_phase</code> del test, los componentes que aún no existen (los hijos del env, que se crean después) no reciben la configuración. Llámalos en <code>end_of_elaboration_phase</code> o <code>start_of_simulation_phase</code>, cuando la jerarquía está completa.</p>
+
+<h3>3.2 Verbosidad desde la línea de comandos</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Opción</th><th>Efecto</th></tr></thead>
+<tbody>
+<tr><td><code>+UVM_VERBOSITY=UVM_HIGH</code></td><td>Umbral global para todos los componentes</td></tr>
+<tr><td><code>+uvm_set_verbosity=&lt;comp&gt;,&lt;id&gt;,&lt;verb&gt;,&lt;fase&gt;</code></td><td>Umbral para componentes (admite comodines) e ID (<code>_ALL_</code> para todos), aplicado al empezar la fase indicada</td></tr>
+<tr><td><code>+uvm_set_verbosity=&lt;comp&gt;,&lt;id&gt;,&lt;verb&gt;,time,&lt;t&gt;</code></td><td>Lo mismo, aplicado a partir de un tiempo de simulación</td></tr>
+</tbody></table></div>
+<p>Ejemplo: <code>+uvm_set_verbosity=uvm_test_top.env.agt1.*,_ALL_,UVM_FULL,run</code> sube a <code>UVM_FULL</code> todo lo que cuelga de <code>agt1</code> al empezar <code>run_phase</code>. Así se depura un bloque sin recompilar ni inundar el log con el resto.</p>
+
+<h3>3.3 Acciones</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Acción</th><th>Efecto</th></tr></thead>
+<tbody>
+<tr><td><code>UVM_NO_ACTION</code></td><td>No hace nada: ni muestra ni cuenta</td></tr>
+<tr><td><code>UVM_DISPLAY</code></td><td>Muestra el mensaje en la salida estándar</td></tr>
+<tr><td><code>UVM_LOG</code></td><td>Escribe el mensaje en el fichero asociado</td></tr>
+<tr><td><code>UVM_COUNT</code></td><td>Incrementa el contador de quit; al alcanzar el máximo, termina la simulación</td></tr>
+<tr><td><code>UVM_EXIT</code></td><td>Termina la simulación inmediatamente (tras el resumen)</td></tr>
+<tr><td><code>UVM_STOP</code></td><td>Ejecuta <code>$stop</code>: útil para parar en el depurador interactivo</td></tr>
+<tr><td><code>UVM_CALL_HOOK</code></td><td>Llama a los métodos <code>report_*_hook</code> del componente (mecanismo antiguo; prefiere catchers)</td></tr>
+</tbody></table></div>
+<p>Las acciones son bits y se combinan con <code>|</code>. Métodos para cambiarlas: <code>set_report_severity_action(sev, act)</code>, <code>set_report_id_action(id, act)</code>, <code>set_report_severity_id_action(sev, id, act)</code> y sus variantes <code>_hier</code>. La más específica (severidad + ID) tiene prioridad sobre la de ID, y esta sobre la de severidad.</p>
+<p>Línea de comandos: <code>+uvm_set_action=&lt;comp&gt;,&lt;id&gt;,&lt;sev&gt;,&lt;acción&gt;</code>, por ejemplo <code>+uvm_set_action=uvm_test_top.*,SCB_SLOW,UVM_WARNING,UVM_NO_ACTION</code>.</p>
+
+<h3>3.4 Cambiar la severidad</h3>
+<pre><code class="language-verilog">// Todos los errores de este componente pasan a ser avisos
+set_report_severity_override(UVM_ERROR, UVM_WARNING);
+// Solo los errores con ID "MISMATCH"
+set_report_severity_id_override(UVM_ERROR, "MISMATCH", UVM_WARNING);
+// Línea de comandos: +uvm_set_severity=uvm_test_top.env.scb,MISMATCH,UVM_ERROR,UVM_WARNING</code></pre>
+<p>Cuidado: degradar errores puede esconder fallos reales. Úsalo solo para casos conocidos y documentados, y preferiblemente con un report catcher que además cuente las ocurrencias (Sección 4).</p>
+
+<h3>3.5 Número máximo de errores</h3>
+<pre><code class="language-verilog">uvm_report_server::get_server().set_max_quit_count(10);
+// Línea de comandos: +UVM_MAX_QUIT_COUNT=10,NO   (NO: el código no puede cambiarlo)</code></pre>
+<p>Cada mensaje con la acción <code>UVM_COUNT</code> (por defecto, los errores) incrementa el contador. Al alcanzar el máximo, UVM llama a <code>pre_abort()</code> en los componentes, imprime el resumen y termina sin ejecutar las fases restantes. Un valor de 0 significa "sin límite", que es el valor por defecto.</p>
+
+<h3>3.6 Ficheros de log</h3>
+<pre><code class="language-verilog">UVM_FILE f = $fopen("errores.log", "w");
+env.set_report_severity_action_hier(UVM_ERROR, UVM_DISPLAY | UVM_LOG | UVM_COUNT);
+env.set_report_severity_file_hier(UVM_ERROR, f);</code></pre>
+<p>El fichero solo se escribe si la acción incluye <code>UVM_LOG</code>. Hay métodos equivalentes por defecto (<code>set_report_default_file</code>), por ID (<code>set_report_id_file</code>) y por severidad e ID (<code>set_report_severity_id_file</code>), con variantes <code>_hier</code>. Cierra los ficheros en <code>final_phase</code>.</p>
+</section>
+
+<!-- ===================================================== 4 -->
+<section id="s4">
+<h2>4. Teoría III: report catchers y report server</h2>
+<p>Un report catcher intercepta cada mensaje antes de que se procese y puede modificarlo o suprimirlo; el report server es el objeto global que da formato a los mensajes procesados, los cuenta e imprime el resumen final. Juntos permiten tests negativos limpios y una decisión PASS/FAIL fiable.</p>
+
+<div class="flow">`uvm_error("PARITY", ...)
+     │
+     ▼
+¿uvm_report_enabled? (verbosidad)  ── no ──▶ descartado, no se cuenta
+     │ sí
+     ▼
+report catchers (en orden de registro)
+     │  THROW: sigue con el mensaje (quizá modificado)
+     │  CAUGHT: se descarta aquí
+     ▼
+severity override ─▶ acción (por severidad / ID) ─▶ report server
+                                                   │  cuenta por severidad e ID
+                                                   │  compose_report_message()
+                                                   ▼
+                                       DISPLAY · LOG · COUNT · EXIT …</div>
+
+<h3>4.1 Report catchers</h3>
+<pre><code class="language-verilog">class demote_catcher extends uvm_report_catcher;
+  `uvm_object_utils(demote_catcher)
+  function new(string name = "demote_catcher"); super.new(name); endfunction
+
+  function action_e catch();
+    if (get_severity() == UVM_ERROR &amp;&amp; get_id() == "PARITY") begin
+      set_severity(UVM_INFO);
+      set_message({"[ESPERADO] ", get_message()});
+    end
+    return THROW;   // deja pasar el mensaje (modificado o no)
+  endfunction
+endclass
+
+// Registro: para un componente concreto o para todos (null)
+demote_catcher c = new();
+uvm_report_cb::add(env.agt1.mon, c);   // solo mensajes de ese componente
+// uvm_report_cb::add(null, c);         // mensajes de cualquier origen</code></pre>
+<ul>
+  <li>Consultas disponibles: <code>get_severity()</code>, <code>get_id()</code>, <code>get_message()</code>, <code>get_verbosity()</code>, <code>get_client()</code> (el objeto que emitió el mensaje), <code>get_fname()</code>, <code>get_line()</code>.</li>
+  <li>Modificaciones: <code>set_severity()</code>, <code>set_id()</code>, <code>set_message()</code>, <code>set_verbosity()</code>, <code>set_action()</code>.</li>
+  <li><code>THROW</code> pasa el mensaje al siguiente catcher y al procesamiento normal; <code>CAUGHT</code> lo descarta (no se muestra ni se cuenta).</li>
+  <li>Los catchers se ejecutan en orden de registro; si uno devuelve <code>CAUGHT</code>, los siguientes no lo ven.</li>
+  <li>Al final, UVM imprime un resumen de catchers con el número de mensajes degradados y capturados.</li>
+</ul>
+<p>Usos típicos: tests negativos que provocan un error a propósito, avisos conocidos de modelos de terceros, y añadir información (por ejemplo, el número de transacción) a mensajes de componentes ajenos.</p>
+
+<h3>4.2 Report server</h3>
+<pre><code class="language-verilog">uvm_report_server svr = uvm_report_server::get_server();
+int n_err   = svr.get_severity_count(UVM_ERROR);
+int n_fatal = svr.get_severity_count(UVM_FATAL);
+int n_mism  = svr.get_id_count("MISMATCH");</code></pre>
+<p>Al final de la simulación el server imprime el <em>UVM Report Summary</em>: número de mensajes por severidad y por ID. Las herramientas de regresión suelen decidir el resultado leyendo ese resumen o un mensaje explícito <code>TEST PASSED</code>/<code>TEST FAILED</code> impreso en <code>report_phase</code>.</p>
+
+<h3>4.3 Formato propio</h3>
+<p>En UVM 1.2 y 1800.2, el formato de cada línea lo construye <code>compose_report_message()</code> del server por defecto. Para cambiarlo, extiende <code>uvm_default_report_server</code>, sobrescribe ese método e instala tu server con <code>uvm_report_server::set_server()</code> antes de <code>run_test()</code>. En UVM 1.1 el método equivalente era <code>compose_message()</code>.</p>
+</section>
+
+<!-- ===================================================== 5 -->
+<section id="s5">
+<h2>5. Testbench base</h2>
+<p>El testbench tiene un env con dos agentes (driver y monitor cada uno) y un scoreboard. No hay DUT: cada componente emite mensajes fijos en tiempos fijos, de modo que puedes predecir el log exacto.</p>
+
+<p class="file"><code>rpt_pkg.sv</code></p>
+<pre><code class="language-verilog">`timescale 1ns/1ps
+package rpt_pkg;
+  import uvm_pkg::*;
+  `include "uvm_macros.svh"
+
+  class rpt_driver extends uvm_component;
+    `uvm_component_utils(rpt_driver)
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    task run_phase(uvm_phase phase);
+      `uvm_info("DRV", "Arranca el driver", UVM_LOW)
+      for (int i = 0; i &lt; 5; i++) begin
+        #10ns `uvm_info("DRV", $sformatf("Envío transacción %0d", i), UVM_HIGH)
+      end
+      `uvm_info("DRV", "Enviadas 5 transacciones", UVM_LOW)
+    endtask
+  endclass
+
+  class rpt_monitor extends uvm_component;
+    `uvm_component_utils(rpt_monitor)
+    bit inject_parity = 0;   // el test puede activarlo
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    task run_phase(uvm_phase phase);
+      for (int i = 0; i &lt; 5; i++) begin
+        #10ns;
+        `uvm_info("MON", $sformatf("Observo transacción %0d", i), UVM_MEDIUM)
+        `uvm_info("MON_DETAIL", $sformatf("Campos de la transacción %0d: addr=0x%0h", i, 16*i), UVM_DEBUG)
+        if (inject_parity &amp;&amp; i == 2)
+          `uvm_error("PARITY", "Error de paridad en la transacción 2")
+      end
+    endtask
+  endclass
+
+  class rpt_agent extends uvm_component;
+    `uvm_component_utils(rpt_agent)
+    rpt_driver  drv;
+    rpt_monitor mon;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      drv = rpt_driver::type_id::create("drv", this);
+      mon = rpt_monitor::type_id::create("mon", this);
+    endfunction
+  endclass
+
+  class rpt_scb extends uvm_component;
+    `uvm_component_utils(rpt_scb)
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    task run_phase(uvm_phase phase);
+      for (int i = 0; i &lt; 5; i++) begin
+        #12ns;
+        if (i == 3) `uvm_error("MISMATCH", $sformatf("Transacción %0d: esperado 0x30, recibido 0x31", i))
+        else        `uvm_info ("MATCH",    $sformatf("Transacción %0d correcta", i), UVM_MEDIUM)
+      end
+      `uvm_warning("SCB_SLOW", "El scoreboard procesó con retraso")
+    endtask
+  endclass
+
+  class rpt_env extends uvm_env;
+    `uvm_component_utils(rpt_env)
+    rpt_agent agt0, agt1;
+    rpt_scb   scb;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      agt0 = rpt_agent::type_id::create("agt0", this);
+      agt1 = rpt_agent::type_id::create("agt1", this);
+      scb  = rpt_scb::type_id::create("scb", this);
+    endfunction
+  endclass
+
+  class base_test extends uvm_test;
+    `uvm_component_utils(base_test)
+    rpt_env env;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      env = rpt_env::type_id::create("env", this);
+    endfunction
+    task run_phase(uvm_phase phase);
+      phase.raise_objection(this);
+      #100ns;
+      phase.drop_objection(this);
+    endtask
+  endclass
+
+  // Aquí irán las clases de las prácticas
+endpackage</code></pre>
+
+<p class="file"><code>tb_top.sv</code></p>
+<pre><code class="language-verilog">`timescale 1ns/1ps
+module tb_top;
+  import uvm_pkg::*;
+  import rpt_pkg::*;
+  initial begin
+    `uvm_info("TOP", "Mensaje desde el módulo top", UVM_LOW)
+    run_test();
+  end
+endmodule</code></pre>
+<p>Línea de tiempo de referencia: drivers y monitores trabajan a 10, 20, 30, 40 y 50 ns; el scoreboard a 12, 24, 36, 48 y 60 ns (el <code>MISMATCH</code> a 48 ns y el aviso a 60 ns); el test termina <code>run_phase</code> a 100 ns.</p>
+</section>
+
+<!-- ===================================================== 6 -->
+<section id="s6">
+<h2>6. Práctica 1: macros y verbosidad</h2>
+<p>Objetivo: comprobar qué mensajes pasan cada umbral de verbosidad, ver el resumen final y medir la diferencia entre macros y funciones.</p>
+
+<h3>6.1 Código</h3>
+<pre><code class="language-verilog">class chatty_test extends uvm_test;
+  `uvm_component_utils(chatty_test)
+  int unsigned calls;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  // Simula un cálculo caro
+  function int expensive();
+    calls++;
+    return 42;
+  endfunction
+
+  function void start_of_simulation_phase(uvm_phase phase);
+    `uvm_info("V_NONE",   "verbosidad UVM_NONE",   UVM_NONE)
+    `uvm_info("V_LOW",    "verbosidad UVM_LOW",    UVM_LOW)
+    `uvm_info("V_MEDIUM", "verbosidad UVM_MEDIUM", UVM_MEDIUM)
+    `uvm_info("V_HIGH",   "verbosidad UVM_HIGH",   UVM_HIGH)
+    `uvm_info("V_FULL",   "verbosidad UVM_FULL",   UVM_FULL)
+    `uvm_info("V_DEBUG",  "verbosidad UVM_DEBUG",  UVM_DEBUG)
+    `uvm_warning("WARN",  "aviso de prueba")
+    `uvm_error  ("ERR",   "error de prueba")
+
+    // Macro frente a función
+    `uvm_info("COST", $sformatf("resultado = %0d", expensive()), UVM_DEBUG)
+    uvm_report_info("COST", $sformatf("resultado = %0d", expensive()), UVM_DEBUG);
+    $display("expensive() se llamó %0d veces", calls);
+  endfunction
+endclass</code></pre>
+
+<h3>6.2 Tareas</h3>
+<ol>
+  <li>Ejecuta <code>+UVM_TESTNAME=chatty_test</code> con cada opción de la tabla y anota qué IDs <code>V_*</code> aparecen, si aparecen <code>WARN</code> y <code>ERR</code>, y cuántas veces se llamó a <code>expensive()</code>.</li>
+  <li>Localiza el <em>UVM Report Summary</em> al final del log. ¿Aparecen en el recuento por ID los mensajes que no se mostraron?</li>
+  <li>Localiza el mensaje <code>[TOP]</code> emitido desde el módulo. ¿Qué contexto muestra?</li>
+  <li>Repite con <code>+UVM_REPORT_DISABLE_FILE_LINE</code> y compara el formato.</li>
+  <li>Pregunta: ¿por qué un mensaje de depuración con <code>UVM_NONE</code> es un mal hábito?</li>
+</ol>
+<div class="table-wrap"><table>
+<thead><tr><th>Opción</th><th>IDs V_* visibles (predicción)</th><th>WARN / ERR</th><th>Llamadas a expensive()</th></tr></thead>
+<tbody>
+<tr><td>(ninguna)</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>+UVM_VERBOSITY=UVM_NONE</code></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>+UVM_VERBOSITY=UVM_LOW</code></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>+UVM_VERBOSITY=UVM_HIGH</code></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>+UVM_VERBOSITY=UVM_DEBUG</code></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+
+<details class="solution">
+<summary>6.3 Solución</summary>
+<div class="body">
+<div class="table-wrap"><table>
+<thead><tr><th>Opción</th><th>IDs V_* visibles</th><th>WARN / ERR</th><th>expensive()</th></tr></thead>
+<tbody>
+<tr><td>(ninguna, umbral MEDIUM)</td><td>NONE, LOW, MEDIUM</td><td>Sí / Sí</td><td>1</td></tr>
+<tr><td><code>UVM_NONE</code></td><td>NONE</td><td>Sí / Sí</td><td>1</td></tr>
+<tr><td><code>UVM_LOW</code></td><td>NONE, LOW</td><td>Sí / Sí</td><td>1</td></tr>
+<tr><td><code>UVM_HIGH</code></td><td>NONE a HIGH</td><td>Sí / Sí</td><td>1</td></tr>
+<tr><td><code>UVM_DEBUG</code></td><td>Los seis</td><td>Sí / Sí</td><td>2 (y aparecen los dos mensajes <code>COST</code>)</td></tr>
+</tbody></table></div>
+<ul>
+  <li>Avisos y errores tienen verbosidad <code>UVM_NONE</code> fija: se ven con cualquier umbral.</li>
+  <li><code>expensive()</code> se llama siempre una vez desde la función <code>uvm_report_info</code>, porque SystemVerilog evalúa sus argumentos antes de llamarla. La macro solo la llama cuando el mensaje pasa el filtro.</li>
+  <li>Los mensajes filtrados por verbosidad no aparecen en el resumen: el server solo cuenta lo que procesa.</li>
+  <li>El mensaje del módulo aparece con el contexto <code>reporter</code> (el report handler de <code>uvm_top</code>).</li>
+  <li>Pregunta 5: un mensaje con <code>UVM_NONE</code> no puede silenciarse bajando la verbosidad; llenará los logs de todas las regresiones. Reserva <code>UVM_NONE</code> para el resultado del test.</li>
+</ul>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 7 -->
+<section id="s7">
+<h2>7. Práctica 2: control jerárquico de la verbosidad</h2>
+<p>Objetivo: ver solo el detalle del bloque que estás depurando, desde el test o desde la línea de comandos, sin inundar el log.</p>
+
+<h3>7.1 Código</h3>
+<pre><code class="language-verilog">class verb_test extends base_test;
+  `uvm_component_utils(verb_test)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  function void end_of_elaboration_phase(uvm_phase phase);
+    // TODO 1: muestra los mensajes UVM_HIGH de todo lo que cuelga de agt1
+    // TODO 2: muestra MON_DETAIL (UVM_DEBUG) solo en el monitor de agt0
+    // TODO 3: oculta los mensajes MATCH del scoreboard sin ocultar el resto
+  endfunction
+endclass</code></pre>
+
+<h3>7.2 Tareas</h3>
+<ol>
+  <li>Ejecuta <code>base_test</code> y cuenta las líneas de cada ID propio (<code>DRV</code>, <code>MON</code>, <code>MON_DETAIL</code>, <code>MATCH</code>).</li>
+  <li>Completa TODO 1 a 3 y ejecuta <code>verb_test</code>. Rellena la tabla.</li>
+  <li><strong>Experimento A</strong>: mueve las tres líneas a <code>build_phase</code>, después de crear el env (añade <code>super.build_phase(phase)</code>). ¿Compila? ¿Funciona?</li>
+  <li><strong>Experimento B</strong>: sustituye TODO 1 por <code>set_report_verbosity_level_hier(UVM_HIGH)</code> llamado sobre el propio test en <code>build_phase</code>. ¿Qué componentes muestran sus mensajes <code>HIGH</code>?</li>
+  <li><strong>Experimento C</strong>: sin TODOs (usa <code>base_test</code>), consigue el mismo efecto que TODO 1 y TODO 2 solo con opciones <code>+uvm_set_verbosity</code>.</li>
+</ol>
+<div class="table-wrap"><table>
+<thead><tr><th>ID</th><th>base_test (predicción)</th><th>verb_test (predicción)</th><th>Resultado</th></tr></thead>
+<tbody>
+<tr><td><code>DRV</code></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>MON</code></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>MON_DETAIL</code></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td><code>MATCH</code></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+
+<details class="solution">
+<summary>7.3 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 1
+env.agt1.set_report_verbosity_level_hier(UVM_HIGH);
+// TODO 2
+env.agt0.mon.set_report_id_verbosity("MON_DETAIL", UVM_DEBUG);
+// TODO 3: bajar el umbral de MATCH por debajo de MEDIUM
+env.scb.set_report_id_verbosity("MATCH", UVM_LOW);</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>ID</th><th>base_test</th><th>verb_test</th></tr></thead>
+<tbody>
+<tr><td><code>DRV</code></td><td>4 (2 por driver, los <code>LOW</code>)</td><td>9: 2 de <code>agt0</code> + 7 de <code>agt1</code> (2 <code>LOW</code> y 5 <code>HIGH</code>)</td></tr>
+<tr><td><code>MON</code></td><td>10</td><td>10</td></tr>
+<tr><td><code>MON_DETAIL</code></td><td>0</td><td>5, todos de <code>agt0.mon</code></td></tr>
+<tr><td><code>MATCH</code></td><td>4</td><td>0</td></tr>
+</tbody></table></div>
+<ul>
+  <li>TODO 3 muestra que el umbral por ID es un umbral, no un "filtro de ocultar": para ocultar un ID se baja su umbral por debajo de la verbosidad de sus mensajes.</li>
+  <li><strong>A</strong>: compila, pero falla en simulación con acceso a handle nulo: en <code>build_phase</code> del test, <code>env</code> existe pero <code>env.agt1</code> y <code>env.scb</code> todavía no (se crean en <code>build_phase</code> del env, que corre después).</li>
+  <li><strong>B</strong>: solo el test (y el env, que ya existe) reciben el nuevo umbral; los drivers, creados después, conservan <code>UVM_MEDIUM</code> y no muestran sus mensajes <code>HIGH</code>. Es la trampa de la Sección 3.1.</li>
+  <li><strong>C</strong>: <code>+uvm_set_verbosity=uvm_test_top.env.agt1.*,_ALL_,UVM_HIGH,run +uvm_set_verbosity=uvm_test_top.env.agt0.mon,MON_DETAIL,UVM_DEBUG,run</code>. Varias opciones <code>+uvm_set_verbosity</code> pueden combinarse en la misma línea de comandos.</li>
+</ul>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 8 -->
+<section id="s8">
+<h2>8. Práctica 3: acciones, severidad y ficheros</h2>
+<p>Objetivo: decidir qué hace UVM con cada mensaje: degradar un error conocido, suprimir un aviso, parar en el primer error y separar el log en ficheros.</p>
+
+<h3>8.1 Código</h3>
+<pre><code class="language-verilog">class action_test extends base_test;
+  `uvm_component_utils(action_test)
+  UVM_FILE err_f, drv_f;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  function void end_of_elaboration_phase(uvm_phase phase);
+    env.agt1.mon.inject_parity = 1;     // añade un error PARITY a 30 ns
+    err_f = $fopen("errores.log", "w");
+    drv_f = $fopen("drivers.log", "w");
+    // TODO 4: convierte los MISMATCH del scoreboard en avisos
+    // TODO 5: suprime por completo el aviso SCB_SLOW en todo el env
+    // TODO 6: los errores del env se muestran, se cuentan y además van a errores.log
+    // TODO 7: los mensajes DRV van solo a drivers.log, no a pantalla
+  endfunction
+
+  function void final_phase(uvm_phase phase);
+    $fclose(err_f);
+    $fclose(drv_f);
+  endfunction
+endclass</code></pre>
+
+<h3>8.2 Tareas</h3>
+<ol>
+  <li>Ejecuta <code>action_test</code> sin TODOs y anota los totales de avisos y errores del resumen.</li>
+  <li>Completa los TODO de uno en uno, anotando tras cada uno los totales y el contenido de los ficheros.</li>
+  <li><strong>Experimento D</strong>: añade <code>uvm_report_server::get_server().set_max_quit_count(1);</code> y quita TODO 4. ¿A qué tiempo termina la simulación? ¿Se ejecuta <code>final_phase</code>?</li>
+  <li><strong>Experimento E</strong>: con <code>base_test</code> y sin tocar código, reproduce TODO 4, TODO 5 y el Experimento D con opciones de línea de comandos.</li>
+</ol>
+<div class="table-wrap"><table>
+<thead><tr><th>Estado</th><th>Avisos / errores (predicción)</th><th>Resultado</th></tr></thead>
+<tbody>
+<tr><td>Sin TODOs</td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>+ TODO 4</td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>+ TODO 5</td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>+ TODO 6 y 7</td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>Experimento D</td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+
+<details class="solution">
+<summary>8.3 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 4
+env.scb.set_report_severity_id_override(UVM_ERROR, "MISMATCH", UVM_WARNING);
+// TODO 5
+env.set_report_id_action_hier("SCB_SLOW", UVM_NO_ACTION);
+// TODO 6
+env.set_report_severity_action_hier(UVM_ERROR, UVM_DISPLAY | UVM_LOG | UVM_COUNT);
+env.set_report_severity_file_hier(UVM_ERROR, err_f);
+// TODO 7
+env.set_report_id_action_hier("DRV", UVM_LOG);
+env.set_report_id_file_hier("DRV", drv_f);</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Estado</th><th>Avisos / errores</th><th>Comentario</th></tr></thead>
+<tbody>
+<tr><td>Sin TODOs</td><td>1 / 2</td><td><code>SCB_SLOW</code>; <code>PARITY</code> (30 ns) y <code>MISMATCH</code> (48 ns)</td></tr>
+<tr><td>+ TODO 4</td><td>2 / 1</td><td><code>MISMATCH</code> pasa a aviso</td></tr>
+<tr><td>+ TODO 5</td><td>1 / 1</td><td><code>SCB_SLOW</code> ni se muestra ni se cuenta</td></tr>
+<tr><td>+ TODO 6 y 7</td><td>1 / 1</td><td><code>errores.log</code> contiene la línea <code>PARITY</code>; <code>drivers.log</code> contiene los 4 mensajes <code>DRV</code> visibles con el umbral por defecto, que ya no salen en pantalla</td></tr>
+<tr><td>Experimento D</td><td>1 / 1 al terminar</td><td>Termina a 30 ns con el primer error (<code>PARITY</code>); se imprime el resumen, pero no se ejecutan las fases restantes, así que <code>final_phase</code> tampoco y los ficheros no se cierran explícitamente</td></tr>
+</tbody></table></div>
+<p>En TODO 7, observa que <code>UVM_LOG</code> sin <code>UVM_DISPLAY</code> saca el mensaje de la pantalla. Los mensajes <code>DRV</code> siguen contándose en el resumen, porque se procesan.</p>
+<p>Experimento E: <code>+uvm_set_severity=uvm_test_top.env.scb,MISMATCH,UVM_ERROR,UVM_WARNING +uvm_set_action=uvm_test_top.env.*,SCB_SLOW,UVM_WARNING,UVM_NO_ACTION +UVM_MAX_QUIT_COUNT=1,NO</code>. Para que haya un error a 30 ns con <code>base_test</code> haría falta activar <code>inject_parity</code>; sin él, el primer error es <code>MISMATCH</code> a 48 ns (si no lo has degradado).</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 9 -->
+<section id="s9">
+<h2>9. Práctica 4: report catchers</h2>
+<p>Objetivo: escribir un test negativo que provoca un error de paridad a propósito, lo convierte en informativo y falla si el error esperado no aparece.</p>
+
+<h3>9.1 Código</h3>
+<pre><code class="language-verilog">class expect_catcher extends uvm_report_catcher;
+  `uvm_object_utils(expect_catcher)
+  string       target_id = "PARITY";
+  int unsigned seen;
+  function new(string name = "expect_catcher"); super.new(name); endfunction
+
+  function action_e catch();
+    // TODO 8: si es un UVM_ERROR con ID target_id:
+    //         cuenta la ocurrencia, degrádalo a UVM_INFO y antepón "[ESPERADO] " al mensaje
+    return THROW;
+  endfunction
+endclass
+
+class mute_catcher extends uvm_report_catcher;
+  `uvm_object_utils(mute_catcher)
+  function new(string name = "mute_catcher"); super.new(name); endfunction
+  function action_e catch();
+    // TODO 9: descarta los avisos SCB_SLOW; deja pasar todo lo demás
+  endfunction
+endclass
+
+class parity_neg_test extends base_test;
+  `uvm_component_utils(parity_neg_test)
+  expect_catcher exp_c;
+  mute_catcher   mute_c;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  function void end_of_elaboration_phase(uvm_phase phase);
+    env.agt1.mon.inject_parity = 1;
+    exp_c  = expect_catcher::type_id::create("exp_c");
+    mute_c = mute_catcher::type_id::create("mute_c");
+    // TODO 10: registra exp_c solo para el monitor de agt1 y mute_c para todos
+  endfunction
+
+  function void report_phase(uvm_phase phase);
+    // TODO 11: uvm_error si el error esperado no apareció exactamente una vez
+  endfunction
+endclass</code></pre>
+
+<h3>9.2 Tareas</h3>
+<ol>
+  <li>Completa los TODO 8 a 11. Ejecuta <code>parity_neg_test</code>: el error <code>PARITY</code> debe aparecer como <code>UVM_INFO</code> con el prefijo, el aviso <code>SCB_SLOW</code> no debe aparecer, y solo debe quedar el error <code>MISMATCH</code>.</li>
+  <li>Localiza el resumen de catchers al final del log.</li>
+  <li><strong>Experimento F</strong>: pon <code>inject_parity = 0</code>. ¿Qué informa el test?</li>
+  <li><strong>Experimento G</strong>: activa también <code>env.agt0.mon.inject_parity = 1</code>. ¿El error de <code>agt0</code> se degrada? ¿Por qué?</li>
+  <li><strong>Experimento H</strong>: registra <code>mute_c</code> antes que <code>exp_c</code> y cambia <code>mute_c</code> para que descarte todo lo que tenga severidad <code>UVM_ERROR</code>. ¿Qué cuenta <code>exp_c</code>? ¿Qué lección sacas?</li>
+</ol>
+
+<details class="solution">
+<summary>9.3 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 8
+if (get_severity() == UVM_ERROR &amp;&amp; get_id() == target_id) begin
+  seen++;
+  set_severity(UVM_INFO);
+  set_message({"[ESPERADO] ", get_message()});
+end
+
+// TODO 9
+if (get_severity() == UVM_WARNING &amp;&amp; get_id() == "SCB_SLOW") return CAUGHT;
+return THROW;
+
+// TODO 10
+uvm_report_cb::add(env.agt1.mon, exp_c);
+uvm_report_cb::add(null, mute_c);
+
+// TODO 11
+if (exp_c.seen != 1)
+  `uvm_error("NEG_TEST", $sformatf("Se esperaba 1 error %s y se vieron %0d", exp_c.target_id, exp_c.seen))</code></pre>
+<ul>
+  <li>Al degradar a <code>UVM_INFO</code>, el mensaje conserva la verbosidad <code>UVM_NONE</code> del error original, así que se sigue mostrando con cualquier umbral.</li>
+  <li><strong>F</strong>: <code>NEG_TEST</code> informa de que se vieron 0 errores: el test negativo falla, como debe. Un test negativo que solo silencia errores sin comprobar que ocurrieron pasaría aunque el checker estuviera roto.</li>
+  <li><strong>G</strong>: no; <code>exp_c</code> está registrado solo para <code>env.agt1.mon</code>, así que el error de <code>agt0</code> sigue siendo <code>UVM_ERROR</code>. Registrar catchers en el componente concreto evita esconder fallos de otras partes.</li>
+  <li><strong>H</strong>: <code>exp_c</code> cuenta 0, porque <code>mute_c</code> captura el error antes y los catchers siguientes no lo ven; además desaparece el <code>MISMATCH</code> real. Lecciones: el orden de registro importa, y un catcher que captura por severidad sin filtrar por ID puede ocultar fallos reales.</li>
+</ul>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 10 -->
+<section id="s10">
+<h2>10. Práctica 5: report server y depuración</h2>
+<p>Objetivo: imprimir un resultado PASS/FAIL fiable, cambiar el formato de los mensajes y encontrar los errores típicos de configuración del reporting.</p>
+
+<h3>10.1 Parte A: resultado del test</h3>
+<p>Añade a <code>base_test</code>:</p>
+<pre><code class="language-verilog">function void report_phase(uvm_phase phase);
+  uvm_report_server svr = uvm_report_server::get_server();
+  // TODO 12: suma errores y fatales; imprime "*** TEST PASSED ***" o
+  //          "*** TEST FAILED (n errores) ***" con un mensaje que no se pueda silenciar
+endfunction</code></pre>
+<p>Tareas: ejecuta <code>base_test</code> (debe fallar por el <code>MISMATCH</code>) y <code>action_test</code> con TODO 4 (debe fallar por <code>PARITY</code>). Crea un test que degrade ambos y comprueba que pasa. Pregunta: ¿qué ocurre con este mensaje si la simulación termina por un <code>uvm_fatal</code>?</p>
+
+<h3>10.2 Parte B: formato propio</h3>
+<pre><code class="language-verilog">class compact_server extends uvm_default_report_server;
+  function new(string name = "compact_server"); super.new(name); endfunction
+
+  virtual function string compose_report_message(uvm_report_message report_message,
+                                                 string report_object_name = "");
+    // TODO 13: devuelve una línea con este formato:
+    //   W     48ns  uvm_test_top.env.scb          [MISMATCH] mensaje
+    //   (primera letra de la severidad, tiempo, nombre completo del emisor, ID, mensaje)
+  endfunction
+endclass</code></pre>
+<p>Instálalo en <code>tb_top</code>, antes de <code>run_test()</code>:</p>
+<pre><code class="language-verilog">compact_server srv = new();
+uvm_report_server::set_server(srv);</code></pre>
+<p>Pista: <code>report_message</code> ofrece <code>get_severity()</code>, <code>get_id()</code>, <code>get_message()</code> y <code>get_report_object()</code>; el tipo de severidad es un enum, así que <code>.name()</code> devuelve <code>"UVM_ERROR"</code>.</p>
+
+<h3>10.3 Parte C: cacería de errores</h3>
+<pre><code class="language-verilog">class debug_test extends base_test;
+  `uvm_component_utils(debug_test)
+  expect_catcher c;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+`ifdef BUG1
+    // Objetivo: ver los mensajes UVM_HIGH de los drivers
+    set_report_verbosity_level_hier(UVM_HIGH);
+`endif
+  endfunction
+
+  function void end_of_elaboration_phase(uvm_phase phase);
+`ifdef BUG2
+    // Objetivo: que el error del scoreboard no cuente
+    env.scb.set_report_id_action("mismatch", UVM_DISPLAY);
+`endif
+`ifdef BUG3
+    // Objetivo: degradar solo PARITY
+    c = expect_catcher::type_id::create("c");
+    c.target_id = "PARITY ";
+    env.agt1.mon.inject_parity = 1;
+    uvm_report_cb::add(env.agt1.mon, c);
+`endif
+  endfunction
+
+  task run_phase(uvm_phase phase);
+    super.run_phase(phase);
+`ifdef BUG4
+    // Objetivo: mensaje de depuración que se pueda silenciar con +UVM_VERBOSITY=UVM_LOW
+    `uvm_info("DBG", "Estado interno del test", UVM_NONE)
+`endif
+  endtask
+endclass</code></pre>
+<p>Compila con <code>+define+BUGn</code> para cada error, describe el síntoma, la causa y la corrección.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Error</th><th>Síntoma</th><th>Causa</th><th>Corrección</th></tr></thead>
+<tbody>
+<tr><td>BUG1</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG2</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG3</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG4</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+
+<details class="solution">
+<summary>10.4 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 12
+int n_err = svr.get_severity_count(UVM_ERROR) + svr.get_severity_count(UVM_FATAL);
+if (n_err == 0) `uvm_info("RESULT", "*** TEST PASSED ***", UVM_NONE)
+else            `uvm_info("RESULT", $sformatf("*** TEST FAILED (%0d errores) ***", n_err), UVM_NONE)
+
+// TODO 13
+uvm_severity sev = uvm_severity'(report_message.get_severity());
+string       sev_name = sev.name();               // "UVM_ERROR"
+return $sformatf("%s %6t  %-30s [%s] %s",
+                 sev_name.substr(4, 4),            // "E"
+                 $time,
+                 report_message.get_report_object().get_full_name(),
+                 report_message.get_id(),
+                 report_message.get_message());</code></pre>
+<ul>
+  <li><strong>Parte A</strong>: con un <code>uvm_fatal</code>, la simulación termina antes de <code>report_phase</code> y el mensaje <code>RESULT</code> nunca se imprime. Por eso los scripts de regresión deben comprobar también el resumen de UVM (o la ausencia de <code>TEST PASSED</code>), no solo buscar <code>TEST FAILED</code>.</li>
+  <li><strong>Parte B</strong>: el formato de <code>%t</code> depende de <code>$timeformat</code>; añade <code>$timeformat(-9, 0, "ns", 6)</code> en <code>tb_top</code> para obtener <code>48ns</code>. Si tu versión de UVM declara <code>get_severity()</code> ya con tipo <code>uvm_severity</code>, el cast es innecesario pero inofensivo.</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>Error</th><th>Síntoma</th><th>Causa</th><th>Corrección</th></tr></thead>
+<tbody>
+<tr><td>BUG1</td><td>Los drivers no muestran sus mensajes <code>HIGH</code></td><td>El método <code>_hier</code> se llama cuando los drivers aún no existen</td><td>Llamarlo en <code>end_of_elaboration_phase</code>, o usar <code>+uvm_set_verbosity</code></td></tr>
+<tr><td>BUG2</td><td>El <code>MISMATCH</code> sigue contando como error</td><td>Los IDs distinguen mayúsculas: <code>"mismatch"</code> no es <code>"MISMATCH"</code></td><td>Usar el ID exacto; mejor aún, definir los IDs como constantes compartidas</td></tr>
+<tr><td>BUG3</td><td>El error <code>PARITY</code> no se degrada y el test falla</td><td>Espacio al final del ID objetivo: <code>"PARITY "</code></td><td>Corregir la cadena; en el catcher, comprobar en <code>report_phase</code> que se vio el mensaje esperado (como en TODO 11) delata este error enseguida</td></tr>
+<tr><td>BUG4</td><td>El mensaje <code>DBG</code> aparece incluso con <code>+UVM_VERBOSITY=UVM_NONE</code></td><td>Verbosidad <code>UVM_NONE</code>: siempre pasa el filtro</td><td>Usar <code>UVM_HIGH</code> o superior para depuración</td></tr>
+</tbody></table></div>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 11 -->
+<section id="s11">
+<h2>11. Evaluación y buenas prácticas</h2>
+<p>Responde las diez preguntas sin consultar el laboratorio; si fallas más de dos, repasa las Secciones 2 y 3 y repite la Práctica 2.</p>
+
+<h3>11.1 Preguntas</h3>
+<ol>
+  <li>Con el umbral por defecto, ¿qué verbosidades se muestran?</li>
+  <li>¿Por qué un <code>`uvm_error</code> se ve incluso con <code>+UVM_VERBOSITY=UVM_NONE</code>?</li>
+  <li>Da dos ventajas de <code>`uvm_info</code> frente a <code>uvm_report_info()</code>.</li>
+  <li>¿Cómo ocultas los mensajes <code>MATCH</code> (verbosidad <code>UVM_MEDIUM</code>) de un scoreboard sin ocultar sus otros mensajes?</li>
+  <li>¿Por qué <code>set_report_verbosity_level_hier()</code> en <code>build_phase</code> del test no afecta a los drivers?</li>
+  <li>¿Qué acciones tiene por defecto un <code>UVM_ERROR</code> y qué significa cada una?</li>
+  <li>¿Qué diferencia hay entre <code>set_report_severity_id_override(UVM_ERROR, "X", UVM_WARNING)</code> y <code>set_report_id_action("X", UVM_NO_ACTION)</code>?</li>
+  <li>¿Qué ocurre al alcanzar el número máximo de errores?</li>
+  <li>¿Qué diferencia hay entre devolver <code>THROW</code> y <code>CAUGHT</code> en un catcher?</li>
+  <li>¿Por qué un test negativo debe comprobar que el error esperado apareció?</li>
+</ol>
+
+<details class="solution">
+<summary>11.2 Respuestas</summary>
+<div class="body">
+<ol>
+  <li><code>UVM_NONE</code>, <code>UVM_LOW</code> y <code>UVM_MEDIUM</code>.</li>
+  <li>Avisos, errores y fatales tienen verbosidad <code>UVM_NONE</code> fija, que pasa cualquier umbral.</li>
+  <li>Comprueba la verbosidad antes de evaluar el mensaje (no ejecuta <code>$sformatf</code> ni funciones si el mensaje está filtrado) y añade fichero y línea.</li>
+  <li>Bajando el umbral de ese ID: <code>scb.set_report_id_verbosity("MATCH", UVM_LOW)</code>.</li>
+  <li>Porque en ese momento los drivers aún no existen; los métodos <code>_hier</code> solo afectan a los componentes existentes.</li>
+  <li><code>UVM_DISPLAY</code> (lo muestra) y <code>UVM_COUNT</code> (incrementa el contador de quit, que puede terminar la simulación al alcanzar el máximo).</li>
+  <li>El override lo convierte en aviso, que se sigue mostrando y contando como aviso. <code>UVM_NO_ACTION</code> lo hace desaparecer por completo, sin mostrarlo ni contarlo.</li>
+  <li>UVM llama a <code>pre_abort()</code>, imprime el resumen y termina la simulación sin ejecutar las fases restantes.</li>
+  <li><code>THROW</code> deja que el mensaje (quizá modificado) siga hacia otros catchers y el procesamiento normal; <code>CAUGHT</code> lo descarta: ni se muestra ni se cuenta.</li>
+  <li>Porque si solo silencia el error, el test pasaría aunque el checker no detectara nada; la comprobación de que apareció es lo que verifica el checker.</li>
+</ol>
+</div>
+</details>
+
+<h3>11.3 Buenas prácticas</h3>
+<ul>
+  <li>Usa siempre las macros, nunca las funciones <code>uvm_report_*</code> directamente.</li>
+  <li>Elige IDs estables y descriptivos, sin datos variables; considera constantes compartidas para los IDs que se filtran o se capturan.</li>
+  <li>Asigna verbosidades con criterio: <code>LOW</code> para hitos, <code>MEDIUM</code> para una línea por transacción, <code>HIGH</code> o más para detalle. Reserva <code>UVM_NONE</code> para el resultado del test.</li>
+  <li>Usa <code>`uvm_error</code> para fallos de verificación y <code>`uvm_fatal</code> solo cuando sea imposible continuar.</li>
+  <li>Aplica configuración jerárquica en <code>end_of_elaboration_phase</code>, o desde la línea de comandos.</li>
+  <li>Degrada o suprime mensajes solo de forma localizada (componente + ID) y documentada; en tests negativos, cuenta las ocurrencias y falla si no aparecen.</li>
+  <li>Fija un número máximo de errores razonable en regresiones para no perder tiempo en simulaciones ya fallidas.</li>
+  <li>Imprime un resultado explícito en <code>report_phase</code> y haz que los scripts comprueben también el resumen de UVM.</li>
+</ul>
+
+<h3>11.4 Referencias</h3>
+<ul>
+  <li>IEEE Std 1800.2, <em>Standard for Universal Verification Methodology Language Reference Manual</em>, capítulo de reporting (<code>uvm_report_object</code>, <code>uvm_report_handler</code>, <code>uvm_report_server</code>, <code>uvm_report_catcher</code>, <code>uvm_report_message</code>).</li>
+  <li>Accellera, <em>UVM 1.2 Class Reference</em> y su código fuente (<code>uvm_report_object.svh</code>, <code>uvm_report_server.svh</code>, <code>uvm_report_catcher.svh</code>, <code>uvm_message_defines.svh</code>).</li>
+  <li>Verification Academy (Siemens EDA), <em>UVM Cookbook</em>, sección sobre reporting y control de mensajes.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/verilog.min.js"></script>
+<script>
+  if (window.hljs) { hljs.highlightAll(); }
+</script>
+</body>
+</html>

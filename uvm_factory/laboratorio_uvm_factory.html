@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio guiado: la fábrica de UVM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #18232e;
+    --ink-soft: #4a5866;
+    --paper: #fbfcfb;
+    --panel: #eef3f0;
+    --rule: #d3ddd8;
+    --mask: #1e5b46;
+    --pad: #a87b1f;
+    --code-bg: #10261f;
+    --code-ink: #dbe8e1;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e4ebe7; --ink-soft: #a4b2ab; --paper: #121a17; --panel: #1a2621;
+      --rule: #2d3d36; --mask: #6fbf9c; --pad: #d9b25a; --code-bg: #0b1814; --code-ink: #dbe8e1;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1.0625rem/1.65 var(--sans); }
+  a { color: var(--mask); }
+  a:focus-visible, summary:focus-visible, button:focus-visible { outline: 2px solid var(--pad); outline-offset: 3px; border-radius: 2px; }
+
+  .layout { display: grid; grid-template-columns: 17rem minmax(0, 1fr); max-width: 78rem; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 2.5rem 1.5rem 2rem 1.75rem; border-right: 1px solid var(--rule); font-size: 0.92rem;
+  }
+  nav.toc p { margin: 0 0 0.75rem; font-weight: 600; color: var(--ink-soft); }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; }
+  nav.toc li { margin: 0.15rem 0; }
+  nav.toc a { display: block; padding: 0.3rem 0.5rem; border-left: 2px solid transparent; color: var(--ink); text-decoration: none; line-height: 1.35; }
+  nav.toc a:hover { border-left-color: var(--pad); background: var(--panel); }
+
+  main { padding: 2.5rem clamp(1.25rem, 4vw, 3.5rem) 5rem; min-width: 0; }
+  .measure { max-width: 46rem; }
+
+  header.title { margin-bottom: 3rem; padding-bottom: 1.5rem; border-bottom: 3px solid var(--mask); position: relative; }
+  header.title::after { content: ""; position: absolute; left: 0; bottom: -3px; width: 4.5rem; height: 3px; background: var(--pad); }
+  header.title h1 { font-size: clamp(2rem, 4.2vw, 2.9rem); line-height: 1.1; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 0.75rem; }
+  header.title .byline { color: var(--ink-soft); margin: 0; }
+
+  h2 { font-size: 1.6rem; line-height: 1.25; font-weight: 600; margin: 4rem 0 1rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.2rem; font-weight: 600; margin: 2.25rem 0 0.6rem; color: var(--mask); }
+  p, ul, ol { margin: 0 0 1rem; }
+  li { margin: 0.25rem 0; }
+
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--panel); padding: 0.08em 0.32em; border-radius: 3px; }
+  pre {
+    margin: 0 0 1.25rem; padding: 1.1rem 1.25rem; overflow-x: auto;
+    background: var(--code-bg); color: var(--code-ink);
+    border-left: 3px solid var(--pad); border-radius: 0 4px 4px 0; font-size: 0.86rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.5rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+  th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--rule); }
+  thead th { background: var(--panel); font-weight: 600; border-bottom: 2px solid var(--mask); }
+  td.blank { min-width: 7rem; }
+
+  .file { font-weight: 600; margin: 1.5rem 0 0.4rem; }
+  .file code { background: none; padding: 0; font-size: 0.95em; }
+
+  .flow {
+    margin: 0 0 1.5rem; padding: 1rem 1.25rem; background: var(--panel);
+    border-radius: 4px; font-family: var(--mono); font-size: 0.85rem; line-height: 1.6;
+    white-space: pre; overflow-x: auto;
+  }
+
+  details.solution { margin: 1.5rem 0 2rem; border: 1px solid var(--rule); border-left: 3px solid var(--mask); border-radius: 0 4px 4px 0; }
+  details.solution > summary {
+    cursor: pointer; padding: 0.8rem 1.1rem; font-weight: 600; color: var(--mask);
+    list-style: none; display: flex; align-items: center; gap: 0.6rem;
+  }
+  details.solution > summary::-webkit-details-marker { display: none; }
+  details.solution > summary::before {
+    content: "+"; display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem;
+    border: 1.5px solid currentColor; border-radius: 3px; font-family: var(--mono); line-height: 1;
+  }
+  details.solution[open] > summary::before { content: "\2212"; }
+  details.solution > .body { padding: 0 1.1rem 0.5rem; }
+
+  .print-btn { font: 500 0.9rem var(--sans); color: var(--mask); background: none; cursor: pointer; border: 1px solid var(--rule); border-radius: 3px; padding: 0.35rem 0.7rem; margin-top: 1rem; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); padding: 1.5rem 1.25rem; }
+  }
+  @media print {
+    nav.toc, .print-btn { display: none; }
+    .layout { display: block; }
+    pre { white-space: pre-wrap; border: 1px solid #999; background: #f4f4f4; color: #000; }
+  }
+  .hljs-keyword, .hljs-built_in { color: #8fd3b4; }
+  .hljs-type { color: #9cc7e8; }
+  .hljs-string { color: #e6c37a; }
+  .hljs-number, .hljs-literal { color: #f0a58a; }
+  .hljs-comment { color: #7f978c; font-style: italic; }
+  .hljs-meta { color: #c7a8e8; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="Contenido">
+  <p>Contenido</p>
+  <ol>
+    <li><a href="#s1">1. Introducción y objetivos</a></li>
+    <li><a href="#s2">2. Teoría I: registro y creación</a></li>
+    <li><a href="#s3">3. Teoría II: overrides y sus reglas</a></li>
+    <li><a href="#s4">4. Testbench base</a></li>
+    <li><a href="#s5">5. Práctica 1: registro y create</a></li>
+    <li><a href="#s6">6. Práctica 2: overrides de tipo</a></li>
+    <li><a href="#s7">7. Práctica 3: overrides de instancia y precedencia</a></li>
+    <li><a href="#s8">8. Práctica 4: por nombre, línea de comandos y parámetros</a></li>
+    <li><a href="#s9">9. Práctica 5: depuración</a></li>
+    <li><a href="#s10">10. Evaluación y buenas prácticas</a></li>
+  </ol>
+  <button class="print-btn" type="button" onclick="document.querySelectorAll('details').forEach(d=>d.open=true);window.print()">Imprimir con soluciones</button>
+</nav>
+
+<main>
+<div class="measure">
+
+<header class="title">
+  <h1>Laboratorio guiado: la fábrica de UVM</h1>
+  <p class="byline">1 de octubre de 2026</p>
+</header>
+
+<!-- ===================================================== 1 -->
+<section id="s1">
+<h2>1. Introducción y objetivos</h2>
+<p>Al terminar este laboratorio sabrás registrar clases en la fábrica de UVM, crearlas de forma que puedan sustituirse sin tocar el código del entorno, y aplicar overrides de tipo y de instancia prediciendo exactamente qué clase se construye. El laboratorio dura unas 4 horas: 1 hora de teoría y 5 prácticas sobre un mismo testbench con dos agentes.</p>
+
+<p><strong>Objetivos de aprendizaje</strong></p>
+<ol>
+  <li>Explicar qué problema resuelve la fábrica y por qué <code>new()</code> no basta.</li>
+  <li>Registrar componentes y objetos con las macros adecuadas y entender qué generan.</li>
+  <li>Crear objetos con <code>type_id::create()</code>, incluyendo el argumento de contexto para objetos.</li>
+  <li>Aplicar overrides de tipo y de instancia, por tipo y por nombre, desde código y desde la línea de comandos.</li>
+  <li>Predecir el resultado cuando se combinan varios overrides: precedencia, orden, reemplazo y encadenamiento.</li>
+  <li>Registrar y sustituir clases parametrizadas.</li>
+  <li>Depurar con <code>factory.print()</code> y <code>debug_create_by_type()</code>.</li>
+</ol>
+
+<p><strong>Requisitos previos</strong></p>
+<ul>
+  <li>SystemVerilog orientado a objetos: herencia, métodos virtuales, <code>$cast</code>, clases parametrizadas.</li>
+  <li>UVM básico: componentes, fases, agente con driver, monitor y secuenciador, y <code>uvm_config_db</code> para la interfaz virtual.</li>
+  <li>Un simulador con UVM 1.2 o IEEE 1800.2: Questa, VCS, Xcelium, Riviera-PRO o <a href="https://www.edaplayground.com">EDA Playground</a>.</li>
+</ul>
+
+<p><strong>Convenciones</strong></p>
+<ul>
+  <li>Cada práctica tiene: objetivo, código, tareas con <code>// TODO</code>, qué observar y solución plegada.</li>
+  <li>Todas las prácticas parten del testbench de la Sección 4 y añaden clases derivadas.</li>
+  <li>Cada clase imprime su propio nombre de tipo, de modo que el log dice qué construyó la fábrica.</li>
+</ul>
+</section>
+
+<!-- ===================================================== 2 -->
+<section id="s2">
+<h2>2. Teoría I: registro y creación</h2>
+<p>La fábrica es un registro global de tipos que construye objetos por encargo: el código pide "un <code>simple_driver</code>" y la fábrica decide si entrega ese tipo o una clase derivada configurada por el test. Así un test cambia el comportamiento del entorno sin editarlo, que es la base de la reutilización en UVM.</p>
+
+<h3>2.1 El problema que resuelve</h3>
+<p>Con <code>drv = new("drv", this);</code> el tipo queda fijado en el código del agente. Si un test necesita un driver que inyecte errores, habría que editar el agente o duplicarlo. Con <code>drv = simple_driver::type_id::create("drv", this);</code> el agente sigue pidiendo un <code>simple_driver</code>, pero el test puede indicar a la fábrica que entregue un <code>err_driver</code> en su lugar. Gracias al polimorfismo, el agente lo maneja con el mismo handle.</p>
+
+<div class="flow">agente: simple_driver::type_id::create("drv", this)
+          │
+          ▼
+fábrica: ¿override de instancia para "uvm_test_top.env.agt0.drv"?  ── sí ──▶ ese tipo
+          │ no
+          ▼
+         ¿override de tipo para simple_driver?                      ── sí ──▶ ese tipo
+          │ no                                                     (y se repite la búsqueda
+          ▼                                                          para el tipo resultante)
+         construye simple_driver</div>
+
+<h3>2.2 Registro con macros</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Macro</th><th>Para</th><th>Registra el nombre</th></tr></thead>
+<tbody>
+<tr><td><code>`uvm_component_utils(T)</code></td><td>Clases derivadas de <code>uvm_component</code> (constructor <code>new(string name, uvm_component parent)</code>)</td><td>Sí</td></tr>
+<tr><td><code>`uvm_object_utils(T)</code></td><td>Clases derivadas de <code>uvm_object</code>: items, secuencias, configuraciones (constructor <code>new(string name = "...")</code>)</td><td>Sí</td></tr>
+<tr><td><code>`uvm_component_param_utils(T#(P))</code></td><td>Componentes parametrizados</td><td>No: solo por tipo</td></tr>
+<tr><td><code>`uvm_object_param_utils(T#(P))</code></td><td>Objetos parametrizados</td><td>No: solo por tipo</td></tr>
+<tr><td><code>`uvm_*_utils_begin / _end</code></td><td>Igual que las anteriores, añadiendo macros de campo <code>`uvm_field_*</code></td><td>Sí</td></tr>
+</tbody></table></div>
+
+<p>Simplificando, <code>`uvm_component_utils(simple_driver)</code> genera:</p>
+<pre><code class="language-verilog">typedef uvm_component_registry #(simple_driver, "simple_driver") type_id;
+static function type_id get_type();      return type_id::get(); endfunction
+virtual function uvm_object_wrapper get_object_type(); return type_id::get(); endfunction
+const static string type_name = "simple_driver";
+virtual function string get_type_name(); return type_name; endfunction</code></pre>
+<p><code>type_id</code> es una clase <em>proxy</em> (un singleton) que representa el tipo ante la fábrica. Al cargarse el paquete, cada proxy se registra automáticamente. <code>get_type()</code> devuelve ese proxy y es lo que se pasa a los métodos de override. Para objetos, la macro además genera <code>create()</code>.</p>
+
+<h3>2.3 Creación con type_id::create</h3>
+<pre><code class="language-verilog">// Componentes: nombre y padre (el padre define la ruta jerárquica)
+drv = simple_driver::type_id::create("drv", this);
+
+// Objetos: nombre, padre opcional y contexto (ruta usada para overrides de instancia)
+req = simple_item::type_id::create("req", null, get_full_name());</code></pre>
+<ul>
+  <li>Para componentes, la ruta de instancia es <code>{parent.get_full_name(), ".", name}</code>.</li>
+  <li>Para objetos, la ruta es <code>{contxt, ".", name}</code>; si no das contexto, es solo <code>name</code>. Sin contexto, un override de instancia para un objeto casi nunca coincide.</li>
+  <li><code>create</code> hace internamente un <code>$cast</code> al tipo pedido; si el override entrega una clase incompatible, falla con <code>uvm_fatal</code>.</li>
+</ul>
+
+<h3>2.4 Acceso a la fábrica</h3>
+<pre><code class="language-verilog">uvm_factory factory = uvm_factory::get();  // UVM 1.2 y 1800.2
+factory.print();                           // overrides registrados (y tipos, con print(1))</code></pre>
+<p>En UVM 1.1 existía una variable global <code>factory</code>; en UVM 1.2 está obsoleta y en 1800.2 se usa siempre <code>uvm_factory::get()</code>.</p>
+</section>
+
+<!-- ===================================================== 3 -->
+<section id="s3">
+<h2>3. Teoría II: overrides y sus reglas</h2>
+<p>Un override indica a la fábrica "cuando pidan el tipo A, entrega el tipo B". Puede aplicarse a todas las creaciones de A (override de tipo) o solo a las que ocurren en rutas concretas (override de instancia). B debe derivar de A para que el <code>$cast</code> interno funcione.</p>
+
+<h3>3.1 Las formas de declarar un override</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Alcance</th><th>Desde un componente (rutas relativas a él)</th><th>Mediante el proxy</th><th>Línea de comandos</th></tr></thead>
+<tbody>
+<tr><td>Tipo, por tipo</td><td><code>set_type_override_by_type(A::get_type(), B::get_type(), replace = 1)</code></td><td><code>A::type_id::set_type_override(B::get_type())</code></td><td>—</td></tr>
+<tr><td>Instancia, por tipo</td><td><code>set_inst_override_by_type("env.agt0.drv", A::get_type(), B::get_type())</code></td><td><code>A::type_id::set_inst_override(B::get_type(), "env.agt0.drv", this)</code></td><td>—</td></tr>
+<tr><td>Tipo, por nombre</td><td><code>set_type_override("A", "B", replace = 1)</code></td><td>—</td><td><code>+uvm_set_type_override=A,B</code></td></tr>
+<tr><td>Instancia, por nombre</td><td><code>set_inst_override("env.agt0.drv", "A", "B")</code></td><td>—</td><td><code>+uvm_set_inst_override=A,B,uvm_test_top.env.agt0.drv</code></td></tr>
+</tbody></table></div>
+<p>Los métodos de componente convierten la ruta relativa en absoluta anteponiendo <code>get_full_name()</code>. Las rutas de instancia admiten comodines (<code>*</code>, <code>?</code>). Los métodos de <code>uvm_factory</code> (<code>factory.set_inst_override_by_type(A::get_type(), B::get_type(), "uvm_test_top.env.agt0.drv")</code>) usan siempre rutas absolutas.</p>
+<p>Prefiere las variantes <em>por tipo</em>: el compilador comprueba que las clases existen. Las variantes por nombre fallan en simulación si hay una errata, pero son las únicas disponibles desde la línea de comandos.</p>
+
+<h3>3.2 Reglas de resolución</h3>
+<ol>
+  <li><strong>Instancia antes que tipo</strong>: si un override de instancia coincide con la ruta, se usa, aunque exista un override de tipo registrado después.</li>
+  <li><strong>Entre overrides de instancia, gana el primero registrado</strong> que coincida. Registra primero los más específicos y después los más generales.</li>
+  <li><strong>Entre overrides de tipo para el mismo tipo original</strong>, con <code>replace = 1</code> (por defecto) el nuevo sustituye al anterior; con <code>replace = 0</code> se conserva el existente.</li>
+  <li><strong>Encadenamiento</strong>: si A → B y B → C, pedir A produce C. La fábrica repite la búsqueda con el tipo resultante y detecta ciclos.</li>
+  <li><strong>Momento</strong>: un override solo afecta a las llamadas a <code>create</code> que ocurren después de registrarlo. Lo habitual es declararlo en <code>build_phase</code> del test, antes de crear el env.</li>
+  <li><strong>Solo <code>create</code></strong>: un objeto construido con <code>new()</code> nunca se sustituye.</li>
+</ol>
+
+<h3>3.3 Qué sustituir y qué no</h3>
+<ul>
+  <li>Buenos candidatos: drivers con inyección de errores o temporización distinta, items con restricciones adicionales, secuencias, scoreboards o modelos de referencia alternativos, objetos de configuración con valores por defecto distintos.</li>
+  <li>El override solo puede añadir o cambiar comportamiento a través de métodos virtuales y restricciones. Si el agente llama a un método no virtual, la clase derivada no puede cambiarlo: diseña puntos de extensión (<code>virtual task drive_item(...)</code>).</li>
+  <li>La fábrica no cambia interfaces ni conexiones TLM: la clase derivada debe ser compatible con el uso que hace el padre.</li>
+</ul>
+
+<h3>3.4 Errores comunes</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Síntoma</th><th>Causa probable</th></tr></thead>
+<tbody>
+<tr><td>El override no tiene efecto</td><td>El objeto se crea con <code>new()</code>; o el override se registra después del <code>create</code>; o la ruta de instancia no coincide</td></tr>
+<tr><td>El override no tiene efecto y la clase derivada imprime el nombre de la base</td><td>Falta la macro <code>`uvm_*_utils</code> en la clase derivada: hereda el <code>type_id</code> de la base y <code>get_type()</code> devuelve el proxy equivocado</td></tr>
+<tr><td>Error de compilación en <code>type_id</code></td><td>Clase sin macro de registro, o <code>`uvm_object_utils</code> usada en un componente (o al revés)</td></tr>
+<tr><td><code>uvm_fatal</code> al crear</td><td>El tipo de override no deriva del tipo pedido</td></tr>
+<tr><td>Override de instancia sobre items sin efecto</td><td>El item se crea sin contexto: <code>create("req")</code> en lugar de <code>create("req", null, get_full_name())</code></td></tr>
+<tr><td>Override por nombre ignorado con aviso</td><td>Errata en el nombre, o clase parametrizada (no registrada por nombre)</td></tr>
+</tbody></table></div>
+</section>
+
+<!-- ===================================================== 4 -->
+<section id="s4">
+<h2>4. Testbench base</h2>
+<p>El testbench tiene dos agentes idénticos (<code>agt0</code>, <code>agt1</code>) sobre dos interfaces. Cada driver y cada secuencia imprimen su tipo real, así que el log muestra el efecto de cada override. Compílalo y verifica que funciona antes de empezar.</p>
+
+<p class="file"><code>simple_if.sv</code></p>
+<pre><code class="language-verilog">interface simple_if (input logic clk);
+  logic       valid;
+  logic [7:0] data;
+endinterface</code></pre>
+
+<p class="file"><code>factory_lab_pkg.sv</code></p>
+<pre><code class="language-verilog">package factory_lab_pkg;
+  import uvm_pkg::*;
+  `include "uvm_macros.svh"
+
+  // ---------------- Item ----------------
+  class simple_item extends uvm_sequence_item;
+    rand bit [7:0] data;
+    `uvm_object_utils_begin(simple_item)
+      `uvm_field_int(data, UVM_DEFAULT)
+    `uvm_object_utils_end
+    function new(string name = "simple_item"); super.new(name); endfunction
+  endclass
+
+  // ---------------- Driver ----------------
+  class simple_driver extends uvm_driver #(simple_item);
+    `uvm_component_utils(simple_driver)
+    virtual simple_if vif;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      if (!uvm_config_db #(virtual simple_if)::get(this, "", "vif", vif))
+        `uvm_fatal("NOVIF", {"Falta 'vif' para ", get_full_name()})
+    endfunction
+
+    // Punto de extensión: las clases derivadas lo sobrescriben
+    virtual task drive_item(simple_item it);
+      @(posedge vif.clk);
+      vif.valid &lt;= 1; vif.data &lt;= it.data;
+      @(posedge vif.clk);
+      vif.valid &lt;= 0;
+    endtask
+
+    task run_phase(uvm_phase phase);
+      `uvm_info("DRV", {"Construido como ", get_type_name()}, UVM_LOW)
+      vif.valid &lt;= 0;
+      forever begin
+        seq_item_port.get_next_item(req);
+        `uvm_info("DRV", $sformatf("item %s data=0x%02h", req.get_type_name(), req.data), UVM_MEDIUM)
+        drive_item(req);
+        seq_item_port.item_done();
+      end
+    endtask
+  endclass
+
+  // ---------------- Monitor ----------------
+  class simple_monitor extends uvm_monitor;
+    `uvm_component_utils(simple_monitor)
+    virtual simple_if vif;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      if (!uvm_config_db #(virtual simple_if)::get(this, "", "vif", vif))
+        `uvm_fatal("NOVIF", {"Falta 'vif' para ", get_full_name()})
+    endfunction
+    task run_phase(uvm_phase phase);
+      forever begin
+        @(posedge vif.clk);
+        if (vif.valid) `uvm_info("MON", $sformatf("t=%0t data=0x%02h", $time, vif.data), UVM_MEDIUM)
+      end
+    endtask
+  endclass
+
+  typedef uvm_sequencer #(simple_item) simple_sequencer;
+
+  // ---------------- Agente ----------------
+  class simple_agent extends uvm_agent;
+    `uvm_component_utils(simple_agent)
+    simple_driver    drv;
+    simple_monitor   mon;
+    simple_sequencer sqr;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      // TODO 1: crea mon, drv y sqr con la fábrica (nombres "mon", "drv", "sqr")
+    endfunction
+
+    function void connect_phase(uvm_phase phase);
+      drv.seq_item_port.connect(sqr.seq_item_export);
+    endfunction
+  endclass
+
+  // ---------------- Env ----------------
+  class simple_env extends uvm_env;
+    `uvm_component_utils(simple_env)
+    simple_agent agt[2];
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+    function void build_phase(uvm_phase phase);
+      foreach (agt[i])
+        agt[i] = simple_agent::type_id::create($sformatf("agt%0d", i), this);
+    endfunction
+  endclass
+
+  // ---------------- Secuencia ----------------
+  class simple_seq extends uvm_sequence #(simple_item);
+    `uvm_object_utils(simple_seq)
+    int unsigned n_items = 4;
+    function new(string name = "simple_seq"); super.new(name); endfunction
+    task body();
+      `uvm_info("SEQ", {"Construida como ", get_type_name()}, UVM_LOW)
+      repeat (n_items) begin
+        // TODO 2: crea req con la fábrica, pasando get_full_name() como contexto
+        start_item(req);
+        if (!req.randomize()) `uvm_error("RAND", "randomize falló")
+        finish_item(req);
+      end
+    endtask
+  endclass
+
+  // ---------------- Test base ----------------
+  class base_test extends uvm_test;
+    `uvm_component_utils(base_test)
+    simple_env env;
+    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
+      env = simple_env::type_id::create("env", this);
+    endfunction
+
+    function void end_of_elaboration_phase(uvm_phase phase);
+      uvm_top.print_topology();
+      uvm_factory::get().print();
+    endfunction
+
+    task run_phase(uvm_phase phase);
+      phase.raise_objection(this);
+      foreach (env.agt[i]) begin
+        automatic int k = i;
+        fork begin
+          simple_seq seq = simple_seq::type_id::create("seq", null, env.agt[k].sqr.get_full_name());
+          seq.start(env.agt[k].sqr);
+        end join_none
+      end
+      wait fork;
+      phase.drop_objection(this);
+    endtask
+  endclass
+endpackage</code></pre>
+
+<p class="file"><code>tb_top.sv</code></p>
+<pre><code class="language-verilog">module tb_top;
+  import uvm_pkg::*;
+  import factory_lab_pkg::*;
+
+  logic clk = 0;
+  always #5 clk = ~clk;
+
+  simple_if sif0 (clk);
+  simple_if sif1 (clk);
+
+  initial begin
+    uvm_config_db #(virtual simple_if)::set(null, "uvm_test_top.env.agt0.*", "vif", sif0);
+    uvm_config_db #(virtual simple_if)::set(null, "uvm_test_top.env.agt1.*", "vif", sif1);
+    run_test();
+  end
+endmodule</code></pre>
+<p>Ejecuta con <code>+UVM_TESTNAME=base_test</code>. Como el test se selecciona por nombre, cada test nuevo debe registrarse con <code>`uvm_component_utils</code>: <code>run_test()</code> lo crea con la fábrica usando <code>create_component_by_name</code>.</p>
+</section>
+
+<!-- ===================================================== 5 -->
+<section id="s5">
+<h2>5. Práctica 1: registro y creación</h2>
+<p>Objetivo: completar las creaciones con la fábrica y comprobar qué se rompe cuando el registro o la creación son incorrectos.</p>
+
+<h3>5.1 Tareas</h3>
+<ol>
+  <li>Completa TODO 1 y TODO 2. Simula <code>base_test</code>: deben aparecer dos líneas <code>Construido como simple_driver</code> y ocho transacciones (cuatro por agente).</li>
+  <li>Revisa la salida de <code>factory.print()</code>: todavía no hay overrides registrados.</li>
+  <li><strong>Experimento A</strong>: comenta la macro <code>`uvm_component_utils</code> de <code>simple_monitor</code>. ¿Qué error obtienes y en qué línea?</li>
+  <li><strong>Experimento B</strong>: cambia en <code>simple_driver</code> la macro por <code>`uvm_object_utils(simple_driver)</code>. ¿Por qué falla?</li>
+  <li><strong>Experimento C</strong>: en el agente, crea el driver con <code>drv = new("drv", this);</code>. ¿Funciona el testbench? Guarda este cambio en mente: lo volverás a probar en la Práctica 2.</li>
+  <li>Pregunta: ¿qué valor devuelve <code>drv.get_type_name()</code> y de dónde sale?</li>
+</ol>
+
+<details class="solution">
+<summary>5.2 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 1 (agente)
+mon = simple_monitor::type_id::create("mon", this);
+drv = simple_driver::type_id::create("drv", this);
+sqr = simple_sequencer::type_id::create("sqr", this);
+
+// TODO 2 (secuencia)
+req = simple_item::type_id::create("req", null, get_full_name());</code></pre>
+<ul>
+  <li><strong>A</strong>: error de compilación en la línea <code>simple_monitor::type_id::create(...)</code> del agente: <code>type_id</code> no existe porque lo define la macro.</li>
+  <li><strong>B</strong>: la macro de objeto genera un <code>create()</code> que llama a <code>new(name)</code> con un solo argumento, incompatible con el constructor de un componente; además registra un <code>uvm_object_registry</code>, que no sabe construir componentes con padre.</li>
+  <li><strong>C</strong>: el testbench funciona igual, porque sin overrides no hay diferencia. La diferencia aparecerá en cuanto un test intente sustituir el driver.</li>
+  <li><strong>Pregunta</strong>: devuelve <code>"simple_driver"</code>, la constante <code>type_name</code> generada por la macro. Si la fábrica entrega una clase derivada registrada, devolverá el nombre de la derivada.</li>
+</ul>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 6 -->
+<section id="s6">
+<h2>6. Práctica 2: overrides de tipo</h2>
+<p>Objetivo: cambiar el comportamiento de todos los drivers y de todos los items desde un test, sin tocar agente, env ni secuencia.</p>
+
+<h3>6.1 Clases derivadas</h3>
+<p>Añade al paquete, después de las clases base:</p>
+<pre><code class="language-verilog">// Item con valores pequeños
+class small_item extends simple_item;
+  `uvm_object_utils(small_item)
+  constraint c_small { data &lt; 16; }
+  function new(string name = "small_item"); super.new(name); endfunction
+endclass
+
+// Driver lento: 3 ciclos de espera antes de cada transacción
+class slow_driver extends simple_driver;
+  `uvm_component_utils(slow_driver)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  virtual task drive_item(simple_item it);
+    repeat (3) @(posedge vif.clk);
+    super.drive_item(it);
+  endtask
+endclass</code></pre>
+
+<h3>6.2 Tests</h3>
+<pre><code class="language-verilog">class small_item_test extends base_test;
+  `uvm_component_utils(small_item_test)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void build_phase(uvm_phase phase);
+    // TODO 3: override de tipo simple_item -> small_item (método de componente)
+    super.build_phase(phase);
+  endfunction
+endclass
+
+class slow_test extends base_test;
+  `uvm_component_utils(slow_test)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void build_phase(uvm_phase phase);
+    // TODO 4: override de tipo simple_driver -> slow_driver (usando el proxy type_id)
+    super.build_phase(phase);
+  endfunction
+endclass</code></pre>
+
+<h3>6.3 Tareas</h3>
+<ol>
+  <li>Completa TODO 3 y 4. Ejecuta <code>small_item_test</code>: todos los items deben ser <code>small_item</code> con <code>data</code> menor que 16.</li>
+  <li>Ejecuta <code>slow_test</code>: los dos drivers deben imprimir <code>Construido como slow_driver</code>, y la separación entre transacciones en el monitor debe crecer de 20 ns a 50 ns.</li>
+  <li>Revisa <code>factory.print()</code> en ambos tests: anota cómo aparece el override.</li>
+  <li><strong>Experimento D</strong>: en <code>slow_test</code>, mueve el TODO 4 detrás de <code>super.build_phase(phase)</code>. ¿Sigue funcionando? Ahora haz lo mismo con un override de <code>simple_env</code> a una clase <code>my_env</code> derivada (créala vacía, con un <code>uvm_info</code> en su <code>build_phase</code>). ¿Por qué un caso funciona y el otro no?</li>
+  <li><strong>Experimento E</strong>: repite <code>slow_test</code> con el Experimento C de la Práctica 1 activo (<code>drv = new(...)</code>). ¿Qué observas?</li>
+</ol>
+
+<details class="solution">
+<summary>6.4 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 3
+set_type_override_by_type(simple_item::get_type(), small_item::get_type());
+
+// TODO 4
+simple_driver::type_id::set_type_override(slow_driver::get_type());</code></pre>
+<ul>
+  <li>La separación pasa a 50 ns: 3 ciclos de espera más 2 de la transacción, a 10 ns por ciclo.</li>
+  <li><strong>D</strong>: el override del driver sigue funcionando, porque los drivers se crean en <code>build_phase</code> del agente, que se ejecuta después de que termine <code>build_phase</code> del test. El override de <code>simple_env</code> no funciona: el env ya se creó dentro de <code>super.build_phase()</code>, antes del override. Regla: el override debe existir antes de la llamada a <code>create</code> concreta.</li>
+  <li><strong>E</strong>: los drivers siguen siendo <code>simple_driver</code>: <code>new()</code> no consulta la fábrica. No hay aviso de ningún tipo; el override se registra y nunca se usa.</li>
+</ul>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 7 -->
+<section id="s7">
+<h2>7. Práctica 3: overrides de instancia y precedencia</h2>
+<p>Objetivo: sustituir solo componentes u objetos concretos y predecir el resultado cuando se combinan varios overrides. Antes de simular cada experimento, escribe tu predicción.</p>
+
+<h3>7.1 Un tercer driver</h3>
+<pre><code class="language-verilog">// Driver que inyecta un error: invierte el bit 0 del dato
+class err_driver extends simple_driver;
+  `uvm_component_utils(err_driver)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  virtual task drive_item(simple_item it);
+    simple_item bad;
+    $cast(bad, it.clone());
+    bad.data[0] = ~bad.data[0];
+    `uvm_info("ERR", $sformatf("Inyecto error: 0x%02h -> 0x%02h", it.data, bad.data), UVM_LOW)
+    super.drive_item(bad);
+  endtask
+endclass</code></pre>
+
+<h3>7.2 Instancias concretas</h3>
+<pre><code class="language-verilog">class err_agt1_test extends base_test;
+  `uvm_component_utils(err_agt1_test)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void build_phase(uvm_phase phase);
+    // TODO 5: err_driver solo para el driver de agt1
+    // TODO 6: small_item solo para los items de la secuencia de agt0
+    super.build_phase(phase);
+  endfunction
+endclass</code></pre>
+<p>Tarea: completa TODO 5 y 6 y verifica que <code>agt0</code> conserva <code>simple_driver</code> con items pequeños, y que <code>agt1</code> inyecta errores con items normales. Después cambia en la secuencia la creación a <code>simple_item::type_id::create("req")</code>, sin contexto, y vuelve a simular.</p>
+
+<h3>7.3 Experimentos de precedencia</h3>
+<p>Crea un test <code>prec_test</code> y, para cada fila, pon en su <code>build_phase</code> (antes de <code>super.build_phase</code>) solo los overrides indicados, en ese orden. Anota qué driver construye cada agente.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Overrides, en orden de registro</th><th>Predicción agt0 / agt1</th><th>Resultado</th></tr></thead>
+<tbody>
+<tr><td>E1</td><td>Tipo <code>simple_driver → slow_driver</code>; instancia <code>"env.agt0.drv"</code> → <code>err_driver</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E2</td><td>Instancia <code>"env.agt0.drv"</code> → <code>err_driver</code>; instancia <code>"env.*.drv"</code> → <code>slow_driver</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E3</td><td>Instancia <code>"env.*.drv"</code> → <code>slow_driver</code>; instancia <code>"env.agt0.drv"</code> → <code>err_driver</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E4</td><td>Tipo <code>simple_driver → slow_driver</code>; tipo <code>simple_driver → err_driver</code> (replace por defecto)</td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E5</td><td>Tipo <code>simple_driver → slow_driver</code>; tipo <code>simple_driver → err_driver</code> con <code>replace = 0</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E6</td><td>Tipo <code>simple_driver → slow_driver</code>; tipo <code>slow_driver → err_driver</code></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>E7</td><td>Tipo <code>simple_driver → simple_monitor</code></td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+
+<details class="solution">
+<summary>7.4 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 5
+set_inst_override_by_type("env.agt1.drv", simple_driver::get_type(), err_driver::get_type());
+// equivalente con el proxy:
+// simple_driver::type_id::set_inst_override(err_driver::get_type(), "env.agt1.drv", this);
+
+// TODO 6: la ruta de los items es uvm_test_top.env.agt0.sqr.seq.req
+set_inst_override_by_type("env.agt0.sqr.*", simple_item::get_type(), small_item::get_type());</code></pre>
+<p>Sin contexto, la ruta del item es solo <code>"req"</code>: no coincide con <code>uvm_test_top.env.agt0.sqr.*</code> y el override de items deja de aplicarse. El override del driver sigue funcionando, porque los componentes siempre tienen ruta.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>agt0 / agt1</th><th>Por qué</th></tr></thead>
+<tbody>
+<tr><td>E1</td><td>err / slow</td><td>El override de instancia tiene prioridad sobre el de tipo, sin importar el orden</td></tr>
+<tr><td>E2</td><td>err / slow</td><td>Entre overrides de instancia gana el primero registrado que coincide</td></tr>
+<tr><td>E3</td><td>slow / slow</td><td><code>"env.*.drv"</code> se registró primero y también coincide con <code>agt0</code>: el específico nunca se alcanza</td></tr>
+<tr><td>E4</td><td>err / err</td><td>Con <code>replace = 1</code> el segundo override de tipo sustituye al primero</td></tr>
+<tr><td>E5</td><td>slow / slow</td><td>Con <code>replace = 0</code> se conserva el override existente</td></tr>
+<tr><td>E6</td><td>err / err</td><td>Encadenamiento: <code>simple_driver → slow_driver → err_driver</code></td></tr>
+<tr><td>E7</td><td>Fatal al crear</td><td>La fábrica construye un <code>simple_monitor</code>, pero el <code>$cast</code> a <code>simple_driver</code> dentro de <code>create</code> falla</td></tr>
+</tbody></table></div>
+<p>Conclusión: registra los overrides de instancia del más específico al más general, y confirma siempre el resultado con <code>factory.print()</code> y la topología.</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 8 -->
+<section id="s8">
+<h2>8. Práctica 4: por nombre, línea de comandos y clases parametrizadas</h2>
+<p>Objetivo: aplicar overrides sin recompilar, crear objetos a partir de un string y entender por qué las clases parametrizadas solo admiten overrides por tipo.</p>
+
+<h3>8.1 Overrides desde la línea de comandos</h3>
+<p>Sin modificar código, ejecuta <code>base_test</code> con cada una de estas opciones y anota el resultado:</p>
+<ol>
+  <li><code>+uvm_set_type_override=simple_driver,slow_driver</code></li>
+  <li><code>+uvm_set_inst_override=simple_driver,err_driver,uvm_test_top.env.agt0.drv</code></li>
+  <li>Las dos anteriores a la vez.</li>
+  <li><code>+uvm_set_type_override=simple_driver,slowdriver</code> (con errata).</li>
+</ol>
+<p>Ventaja: una regresión puede lanzar el mismo test con variantes distintas sin recompilar. Inconveniente: los nombres no se comprueban en compilación.</p>
+
+<h3>8.2 Crear por nombre: elegir la secuencia desde la línea de comandos</h3>
+<p>Añade una secuencia alternativa y un test que la elige con un plusarg:</p>
+<pre><code class="language-verilog">class burst_seq extends simple_seq;
+  `uvm_object_utils(burst_seq)
+  function new(string name = "burst_seq"); super.new(name); n_items = 10; endfunction
+endclass
+
+class seq_by_name_test extends base_test;
+  `uvm_component_utils(seq_by_name_test)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  task run_phase(uvm_phase phase);
+    string            seq_name = "simple_seq";
+    uvm_object        obj;
+    uvm_sequence_base seq;
+    void'($value$plusargs("SEQ=%s", seq_name));
+    phase.raise_objection(this);
+    // TODO 7: crea un objeto con nombre de tipo seq_name usando la fábrica,
+    //         conviértelo a uvm_sequence_base con $cast y lánzalo en env.agt[0].sqr
+    phase.drop_objection(this);
+  endtask
+endclass</code></pre>
+<p>Tarea: ejecuta con <code>+SEQ=burst_seq</code> y con <code>+SEQ=simple_seq</code>. Después prueba <code>+SEQ=no_existe</code> y comprueba que tu código lo detecta.</p>
+
+<h3>8.3 Clases parametrizadas</h3>
+<pre><code class="language-verilog">class param_scoreboard #(int W = 8) extends uvm_component;
+  `uvm_component_param_utils(param_scoreboard #(W))
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void build_phase(uvm_phase phase);
+    `uvm_info("SB", $sformatf("Scoreboard de %0d bits", W), UVM_LOW)
+  endfunction
+endclass
+
+class strict_scoreboard #(int W = 8) extends param_scoreboard #(W);
+  `uvm_component_param_utils(strict_scoreboard #(W))
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+endclass
+
+typedef param_scoreboard  #(8) sb8_t;
+typedef strict_scoreboard #(8) strict_sb8_t;</code></pre>
+<p>Tareas:</p>
+<ol>
+  <li>Añade al env un <code>sb8_t sb;</code> creado con <code>sb8_t::type_id::create("sb", this)</code>.</li>
+  <li>En un test, sustitúyelo por <code>strict_sb8_t</code> con un override por tipo. Verifica en <code>factory.print()</code>.</li>
+  <li>Intenta lo mismo con <code>set_type_override("param_scoreboard", "strict_scoreboard")</code>. ¿Qué ocurre?</li>
+  <li>Intenta el override de <code>param_scoreboard #(8)</code> a <code>strict_scoreboard #(16)</code>. ¿Compila? ¿Por qué?</li>
+</ol>
+
+<details class="solution">
+<summary>8.4 Solución</summary>
+<div class="body">
+<pre><code class="language-verilog">// TODO 7
+obj = uvm_factory::get().create_object_by_name(seq_name, get_full_name(), seq_name);
+if (obj == null || !$cast(seq, obj))
+  `uvm_fatal("NOSEQ", {"'", seq_name, "' no es una secuencia registrada"})
+seq.start(env.agt[0].sqr);
+
+// Override de la clase parametrizada (en build_phase del test, antes de crear el env)
+set_type_override_by_type(sb8_t::get_type(), strict_sb8_t::get_type());</code></pre>
+<p>Línea de comandos: (1) ambos drivers <code>slow_driver</code>; (2) <code>agt0</code> con <code>err_driver</code>; (3) <code>agt0</code> con <code>err_driver</code> (instancia gana), <code>agt1</code> con <code>slow_driver</code>; (4) aviso de la fábrica indicando que el tipo de override no está registrado, y ambos drivers siguen siendo <code>simple_driver</code>.</p>
+<p>Clases parametrizadas:</p>
+<ul>
+  <li>Las macros <code>_param_utils</code> no registran un nombre, porque cada especialización es un tipo distinto. El override por nombre provoca un aviso de tipo no registrado y no tiene efecto. Por eso <code>+uvm_set_type_override</code> tampoco funciona con ellas.</li>
+  <li><code>param_scoreboard #(8)</code> y <code>strict_scoreboard #(16)</code> no están relacionados por herencia (<code>strict_scoreboard #(16)</code> deriva de <code>param_scoreboard #(16)</code>). La llamada compila, porque los argumentos son proxies genéricos, pero el <code>create</code> fallará con un <code>uvm_fatal</code> de cast.</li>
+  <li>Usa <code>typedef</code> para cada especialización: evita escribir parámetros en cada llamada y hace que los errores de tipo sean evidentes.</li>
+</ul>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 9 -->
+<section id="s9">
+<h2>9. Práctica 5: depuración de la fábrica</h2>
+<p>Objetivo: diagnosticar un override que no funciona usando las herramientas de la fábrica en lugar de prueba y error. La práctica introduce cuatro errores controlados por macros.</p>
+
+<h3>9.1 Herramientas</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Herramienta</th><th>Qué muestra</th></tr></thead>
+<tbody>
+<tr><td><code>uvm_factory::get().print(0)</code></td><td>Overrides de tipo y de instancia registrados</td></tr>
+<tr><td><code>uvm_factory::get().print(1)</code></td><td>Además, los tipos registrados por el usuario (con <code>2</code>, también los de UVM)</td></tr>
+<tr><td><code>debug_create_by_type(tipo, ruta_padre, nombre)</code></td><td>Simula la búsqueda de la fábrica para una ruta y explica qué override aplicaría</td></tr>
+<tr><td><code>find_override_by_type(tipo, ruta_completa)</code></td><td>Devuelve el proxy del tipo que se construiría; útil en aserciones</td></tr>
+<tr><td><code>uvm_top.print_topology()</code></td><td>Tipos y rutas reales tras la elaboración: confirma el resultado final</td></tr>
+<tr><td><code>get_type_name()</code> en un <code>uvm_info</code></td><td>El tipo real de un objeto en tiempo de ejecución</td></tr>
+</tbody></table></div>
+<p>Ejemplo de uso en <code>end_of_elaboration_phase</code>:</p>
+<pre><code class="language-verilog">uvm_factory f = uvm_factory::get();
+f.debug_create_by_type(simple_driver::get_type(), "uvm_test_top.env.agt1", "drv");</code></pre>
+
+<h3>9.2 Los cuatro errores</h3>
+<p>Crea <code>debug_test</code>, cuyo objetivo es que <code>agt1</code> use <code>err_driver</code>:</p>
+<pre><code class="language-verilog">class debug_test extends base_test;
+  `uvm_component_utils(debug_test)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  function void build_phase(uvm_phase phase);
+`ifdef BUG3
+    super.build_phase(phase);
+`elsif BUG4
+    set_inst_override_by_type("agt1.drv", simple_driver::get_type(), err_driver::get_type());
+    super.build_phase(phase);
+`else
+    set_inst_override_by_type("env.agt1.drv", simple_driver::get_type(), err_driver::get_type());
+    super.build_phase(phase);
+`endif
+  endfunction
+
+`ifdef BUG3
+  function void connect_phase(uvm_phase phase);
+    set_inst_override_by_type("env.agt1.drv", simple_driver::get_type(), err_driver::get_type());
+  endfunction
+`endif
+endclass</code></pre>
+<p>Y en otras partes del código:</p>
+<pre><code class="language-verilog">// BUG1: en simple_agent::build_phase
+`ifdef BUG1
+  drv = new("drv", this);
+`else
+  drv = simple_driver::type_id::create("drv", this);
+`endif
+
+// BUG2: en err_driver, envuelve la macro
+`ifndef BUG2
+  `uvm_component_utils(err_driver)
+`endif</code></pre>
+
+<h3>9.3 Tareas</h3>
+<p>Compila con <code>+define+BUGn</code> para cada error y diagnostica solo con el log y las herramientas de la tabla 9.1.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Error</th><th>Síntoma en el log</th><th>Herramienta que lo delató</th><th>Causa</th><th>Corrección</th></tr></thead>
+<tbody>
+<tr><td>BUG1</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG2</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG3</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr><td>BUG4</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+</tbody></table></div>
+<p>Pregunta: ¿cuál de los cuatro errores es el más difícil de detectar sin herramientas y por qué?</p>
+
+<details class="solution">
+<summary>9.4 Solución</summary>
+<div class="body">
+<div class="table-wrap"><table>
+<thead><tr><th>Error</th><th>Pista</th><th>Causa</th><th>Corrección</th></tr></thead>
+<tbody>
+<tr><td>BUG1</td><td><code>factory.print()</code> muestra el override correcto, pero la topología indica <code>simple_driver</code> en ambos agentes</td><td><code>new()</code> no consulta la fábrica</td><td>Usar <code>type_id::create</code></td></tr>
+<tr><td>BUG2</td><td>El driver de <code>agt1</code> imprime <code>Construido como simple_driver</code>; <code>factory.print()</code> muestra un override de <code>simple_driver</code> a <code>simple_driver</code></td><td>Sin macro, <code>err_driver</code> hereda <code>type_id</code>, <code>get_type()</code> y <code>get_type_name()</code> de la base</td><td>Añadir <code>`uvm_component_utils(err_driver)</code></td></tr>
+<tr><td>BUG3</td><td>El override aparece en <code>factory.print()</code> si se imprime al final, pero la topología muestra <code>simple_driver</code></td><td>Todos los <code>build_phase</code> terminan antes de cualquier <code>connect_phase</code>: el driver ya existía</td><td>Registrar el override en <code>build_phase</code>, antes de <code>super.build_phase</code></td></tr>
+<tr><td>BUG4</td><td><code>factory.print()</code> muestra la ruta <code>uvm_test_top.agt1.drv</code>, que no existe en la topología; <code>debug_create_by_type</code> no encuentra override para <code>uvm_test_top.env.agt1.drv</code></td><td>Ruta relativa incompleta: falta <code>env.</code></td><td>Usar <code>"env.agt1.drv"</code>, copiando la ruta de la topología</td></tr>
+</tbody></table></div>
+<p>Respuesta: BUG2 es el más traicionero. Compila, no genera avisos, el override parece registrado y la clase derivada existe; solo se descubre al ver que <code>get_type_name()</code> devuelve el nombre de la base o al leer con atención <code>factory.print()</code>.</p>
+</div>
+</details>
+</section>
+
+<!-- ===================================================== 10 -->
+<section id="s10">
+<h2>10. Evaluación y buenas prácticas</h2>
+<p>Responde las diez preguntas sin consultar el laboratorio; si fallas más de dos, repasa la Sección 3 y repite la Práctica 3.</p>
+
+<h3>10.1 Preguntas</h3>
+<ol>
+  <li>¿Qué tres cosas genera <code>`uvm_component_utils(T)</code> que la fábrica necesita?</li>
+  <li>¿Por qué un objeto construido con <code>new()</code> no puede sustituirse?</li>
+  <li>¿Cuál es la ruta de instancia de <code>my_cfg::type_id::create("cfg", null, "uvm_test_top.env")</code>? ¿Y de <code>my_cfg::type_id::create("cfg")</code>?</li>
+  <li>Hay un override de tipo A → B y otro de instancia A → C para <code>env.agt0.x</code>, registrado antes. ¿Qué se construye en <code>env.agt0.x</code> y en <code>env.agt1.x</code>?</li>
+  <li>Se registran, en este orden, los overrides de instancia <code>"env.*"</code> → B y <code>"env.agt0.x"</code> → C. ¿Qué obtiene <code>env.agt0.x</code>?</li>
+  <li>¿Qué ocurre con A → B seguido de A → C con <code>replace = 0</code>?</li>
+  <li>¿Qué produce pedir A si existen A → B y B → C?</li>
+  <li>¿Por qué no se puede usar <code>+uvm_set_type_override</code> con una clase registrada con <code>`uvm_component_param_utils</code>?</li>
+  <li>Una clase derivada no tiene macro de registro. ¿Qué efecto tiene sobre un override hacia ella?</li>
+  <li>¿En qué punto del test debe registrarse un override del env, y por qué uno del driver puede registrarse algo más tarde?</li>
+</ol>
+
+<details class="solution">
+<summary>10.2 Respuestas</summary>
+<div class="body">
+<ol>
+  <li>El proxy <code>type_id</code> (un <code>uvm_component_registry</code> que se registra en la fábrica), <code>get_type()</code> y <code>get_type_name()</code>/<code>get_object_type()</code>.</li>
+  <li>Porque <code>new()</code> es una construcción directa de SystemVerilog con tipo fijo: la fábrica nunca participa.</li>
+  <li><code>uvm_test_top.env.cfg</code>. Sin contexto, solo <code>cfg</code>.</li>
+  <li>C en <code>env.agt0.x</code> (instancia gana) y B en <code>env.agt1.x</code>. El orden de registro no cambia esto.</li>
+  <li>B: entre overrides de instancia gana el primero registrado que coincide, y <code>"env.*"</code> coincide.</li>
+  <li>Se conserva A → B.</li>
+  <li>C, por encadenamiento.</li>
+  <li>Porque las macros parametrizadas no registran un nombre de tipo, y la línea de comandos solo trabaja por nombre.</li>
+  <li>Hereda el <code>type_id</code> de la base: <code>Derivada::get_type()</code> devuelve el proxy de la base, el override queda como A → A y no tiene efecto.</li>
+  <li>El del env, antes de crearlo (antes de <code>super.build_phase</code> si la base lo crea ahí). El del driver puede ir más tarde dentro del <code>build_phase</code> del test, porque el driver se crea en <code>build_phase</code> del agente, que ocurre después; aun así, la costumbre segura es registrarlos todos al principio.</li>
+</ol>
+</div>
+</details>
+
+<h3>10.3 Buenas prácticas</h3>
+<ul>
+  <li>Registra todas las clases (componentes, objetos, items, secuencias, configuraciones y tests) con su macro.</li>
+  <li>Crea siempre con <code>type_id::create</code>; nunca uses <code>new()</code> para nada que un test pueda querer sustituir.</li>
+  <li>Pasa contexto (<code>get_full_name()</code>) al crear objetos si quieres permitir overrides de instancia sobre ellos.</li>
+  <li>Registra los overrides al principio de <code>build_phase</code> del test, antes de crear el env.</li>
+  <li>Prefiere overrides por tipo en el código; reserva los de nombre para la línea de comandos.</li>
+  <li>Ordena los overrides de instancia del más específico al más general.</li>
+  <li>Diseña puntos de extensión virtuales (<code>drive_item</code>, <code>calc_expected</code>) para que las clases derivadas tengan qué sustituir.</li>
+  <li>Usa <code>typedef</code> para especializaciones de clases parametrizadas.</li>
+  <li>Imprime <code>factory.print()</code> y la topología en <code>end_of_elaboration_phase</code> del test base: cuestan poco y ahorran horas.</li>
+</ul>
+
+<h3>10.4 Referencias</h3>
+<ul>
+  <li>IEEE Std 1800.2, <em>Standard for Universal Verification Methodology Language Reference Manual</em>, capítulo sobre la fábrica (<code>uvm_factory</code>, <code>uvm_component_registry</code>, <code>uvm_object_registry</code>).</li>
+  <li>Accellera, <em>UVM 1.2 Class Reference</em> y su código fuente (<code>uvm_factory.svh</code>, <code>uvm_registry.svh</code>, <code>uvm_object_defines.svh</code>).</li>
+  <li>Verification Academy (Siemens EDA), <em>UVM Cookbook</em>, sección sobre la fábrica y los overrides.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/verilog.min.js"></script>
+<script>
+  if (window.hljs) { hljs.highlightAll(); }
+</script>
+</body>
+</html>
