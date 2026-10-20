@@ -10,18 +10,32 @@ package lab_pkg;
     function new(string name = "simple_item"); super.new(name); endfunction
   endclass
 
+  class simple_agent_cfg extends uvm_object;
+  `uvm_object_utils(simple_agent_cfg)
+  uvm_active_passive_enum is_active   = UVM_ACTIVE;
+  virtual simple_if       vif;
+  int unsigned            idle_cycles = 0;   // ciclos entre transacciones
+  bit                     has_checks  = 1;
+  function new(string name = "simple_agent_cfg"); super.new(name); endfunction
+endclass
+
+
+
+
   class simple_driver extends uvm_driver #(simple_item);
     `uvm_component_utils(simple_driver)
     virtual simple_if vif;
     function new(string name, uvm_component parent); super.new(name, parent); endfunction
 
+    simple_agent_cfg cfg;
+
     function void build_phase(uvm_phase phase);
-      super.build_phase(phase);
-      // TODO 1: recupera "vif" con uvm_config_db y lanza `uvm_fatal si falla
-      if (!uvm_config_db #(virtual simple_if)::get(this, "", "vif", vif))
-        `uvm_fatal("NOVIF", {"Falta 'vif' para ", get_full_name()})  
-      
+    super.build_phase(phase);
+    // TODO 6: recupera "cfg" y asigna vif = cfg.vif
     endfunction
+
+// En run_phase, tras item_done():
+repeat (cfg.idle_cycles) @(posedge vif.clk);
 
     task run_phase(uvm_phase phase);
       vif.valid <= 0;
@@ -41,14 +55,15 @@ package lab_pkg;
     virtual simple_if vif;
     function new(string name, uvm_component parent); super.new(name, parent); endfunction
 
+    simple_agent_cfg cfg;
+
     function void build_phase(uvm_phase phase);
-      super.build_phase(phase);
-      // TODO 2: recupera "vif" igual que en el driver
-
-        if (!uvm_config_db #(virtual simple_if)::get(this, "", "vif", vif))
-        `uvm_fatal("NOVIF", {"Falta 'vif' para ", get_full_name()})
-
+    super.build_phase(phase);
+    // TODO 6: recupera "cfg" y asigna vif = cfg.vif
     endfunction
+
+// En run_phase, tras item_done():
+repeat (cfg.idle_cycles) @(posedge vif.clk);
 
     task run_phase(uvm_phase phase);
       forever begin
@@ -61,23 +76,29 @@ package lab_pkg;
   typedef uvm_sequencer #(simple_item) simple_sequencer;
 
   class simple_agent extends uvm_agent;
-    `uvm_component_utils(simple_agent)
-    simple_driver    drv;
-    simple_monitor   mon;
-    simple_sequencer sqr;
-    function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  `uvm_component_utils(simple_agent)
+  simple_agent_cfg cfg;
+  simple_driver    drv;
+  simple_monitor   mon;
+  simple_sequencer sqr;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
 
-    function void build_phase(uvm_phase phase);
-      super.build_phase(phase);
-      mon = simple_monitor::type_id::create("mon", this);
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    // TODO 4: recupera "cfg" (tipo simple_agent_cfg); `uvm_fatal si falta
+    // TODO 5: reenvía cfg a todos los hijos del agente con un set
+    mon = simple_monitor::type_id::create("mon", this);
+    if (cfg.is_active == UVM_ACTIVE) begin
       drv = simple_driver::type_id::create("drv", this);
       sqr = simple_sequencer::type_id::create("sqr", this);
-    endfunction
+    end
+  endfunction
 
-    function void connect_phase(uvm_phase phase);
+  function void connect_phase(uvm_phase phase);
+    if (cfg.is_active == UVM_ACTIVE)
       drv.seq_item_port.connect(sqr.seq_item_export);
-    endfunction
-  endclass
+  endfunction
+endclass
 
   class simple_env extends uvm_env;
     `uvm_component_utils(simple_env)
@@ -103,20 +124,31 @@ package lab_pkg;
   endclass
 
   class base_test extends uvm_test;
-    `uvm_component_utils(base_test)
-    simple_env env;
-    function new(string name, uvm_component parent); super.new(name, parent); endfunction
-    function void build_phase(uvm_phase phase);
-      env = simple_env::type_id::create("env", this);
-    endfunction
-    function void end_of_elaboration_phase(uvm_phase phase);
-      uvm_top.print_topology();
-    endfunction
-    task run_phase(uvm_phase phase);
-      simple_seq seq = simple_seq::type_id::create("seq");
-      phase.raise_objection(this);
-      seq.start(env.agt.sqr);
-      phase.drop_objection(this);
-    endtask
-  endclass
+  `uvm_component_utils(base_test)
+  simple_env       env;
+  simple_agent_cfg cfg;
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+
+  virtual function void configure(); // los tests hijos la sobrescriben
+    cfg.idle_cycles = 2;
+  endfunction
+
+  function void build_phase(uvm_phase phase);
+    cfg = simple_agent_cfg::type_id::create("cfg");
+    // TODO 7: recupera "vif" publicada por tb_top y guárdala en cfg.vif
+    configure();
+    // TODO 8: publica cfg para el agente "env.agt"
+    env = simple_env::type_id::create("env", this);
+  endfunction
+  // end_of_elaboration_phase y run_phase como en la Práctica 1,
+  // pero lanzando la secuencia solo si cfg.is_active == UVM_ACTIVE
+endclass
+
+class passive_test extends base_test;
+  `uvm_component_utils(passive_test)
+  function new(string name, uvm_component parent); super.new(name, parent); endfunction
+  function void configure();
+    cfg.is_active = UVM_PASSIVE;
+  endfunction
+endclass
 endpackage
